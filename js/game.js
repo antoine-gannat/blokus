@@ -16,6 +16,7 @@ class Game {
         this._ctx.canvas.style.marginTop = (borderPadding / 2) + "px";
         // generate the map
         this._map = new Map();
+        this._canvas.addEventListener("click", this.onClick.bind(this));
     }
 
     // sleep for 'ms' milliseconds
@@ -48,5 +49,19 @@ class Game {
     tick() {
         this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
         this._map.render();
+    }
+
+    onClick(clickEvent) {
+        // Calculate the position of the canvas
+        var xCanvasPos = ((window.innerWidth - this._ctx.canvas.width) / 2);
+        var yCanvasPos = ((window.innerHeight - this._ctx.canvas.height) / 2);
+        // Create a new element with the click position relative to the canvas
+        var click = { x: clickEvent.clientX - xCanvasPos, y: clickEvent.clientY - yCanvasPos };
+        // If the position are negative, set to 0
+        if (click.x < 0)
+            click.x = 0;
+        if (click.y < 0)
+            click.y = 0;
+        this._map.placeBlock(click);
     }
 }
