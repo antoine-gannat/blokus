@@ -1,11 +1,3 @@
-const COLORS = {
-    BLUE: "Blue",
-    RED: "Red",
-    GREEN: "Green",
-    YELLOW: "Yellow",
-    EMPTY: "Empty"
-}
-
 class Map {
     constructor() {
         // Allocate the columns

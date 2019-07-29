@@ -16,7 +16,21 @@ class Game {
         this._ctx.canvas.style.marginTop = (borderPadding / 2) + "px";
         // generate the map
         this._map = new Map();
+        // add an event listener on the canvas
         this._canvas.addEventListener("click", this.onClick.bind(this));
+        // The player
+        this._player;
+        // Connect to the server
+        console.log("Connect to " + SERVER_URL + ":" + SERVER_PORT);
+        this.socket = io.connect(SERVER_URL + ":" + SERVER_PORT, { secure: true });
+
+        // Set listeners
+        this.socket.on("player-info", this.onPlayerInfo.bind(this));
+    }
+
+    onPlayerInfo(player) {
+        this._player = player;
+        console.log(player);
     }
 
     // sleep for 'ms' milliseconds
@@ -24,6 +38,7 @@ class Game {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    // main loop of the game
     async run() {
         const FRAME_MAX_DURATION = 1000.0 / FRAMES_PER_SECONDS;
         var frameStartTime;
