@@ -17,21 +17,23 @@ class Player {
     }
 
     // return data only accessible for the player
-    getPrivateData() {
+    getPrivateInfo() {
         return ({
             id: this._id,
             pieces: this._pieces,
             color: this._color,
-            username: this._username
+            username: this._username,
+            admin: this._admin
         });
     }
 
     // return data that can be shared with other players
-    getPublicData() {
+    getPublicInfo() {
         return ({
             id: this._id,
             color: this._color,
-            usernmae: this._username
+            username: this._username,
+            admin: this._admin
         });
     }
 }

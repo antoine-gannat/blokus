@@ -13,6 +13,8 @@ class Room {
         this._playerTurnIndex;
         this._map = this.resetMap();
         this._availableColors = [constants.COLORS.BLUE, constants.COLORS.YELLOW, constants.COLORS.RED, constants.COLORS.GREEN];
+
+        console.log("Room " + name + " created");
     }
 
     // reset the map
@@ -39,7 +41,7 @@ class Room {
         var response = [];
         // prepare the data
         this._players.forEach(p => {
-            response.push(p.getPublicData());
+            response.push(p.getPublicInfo());
         });
         // Send to all users
         this.emitToRoom("player-list", response);
@@ -48,6 +50,13 @@ class Room {
     // Send the map to every player in the room
     broadcastMap() {
         this.emitToRoom("map", this._map);
+    }
+
+    // Send to each player it's own private informations
+    broadcastPlayerPrivateInfo() {
+        this._players.forEach(p => {
+            this.sendPlayerInfo(p);
+        });
     }
 
     canPieceBePlaced(piece, position) {
@@ -78,18 +87,24 @@ class Room {
             // if there is no more player in the room
             if (this._players.length == 0) {
                 // remove the room
+                console.log("Deleting room: " + this._name);
                 this._server.removeRoom(this._id);
             }
         }
     }
 
     addPlayer(player) {
+        // if the player is the first one in the room, it's the admin
+        if (this._players.length == 0) {
+            player._admin = true;
+        }
         // add the player to the player list
         this._players.push(player);
         // Send the map to the new player
         player._socket.emit("map", this._map);
         // Broadcast the new player list to every player on the list
         this.broadcastPlayerList();
+        this.sendPlayerInfo(player);
     }
 
     setPlayerColors() {
@@ -104,6 +119,10 @@ class Room {
         })
     }
 
+    sendPlayerInfo(player) {
+        player._socket.emit("player-info", player.getPrivateInfo());
+    }
+
     getPublicInfo() {
         return ({
             id: this._id,
@@ -114,8 +133,11 @@ class Room {
 
     // start the game
     start() {
+        console.log("starting room: " + this._name);
         this._started = true;
         this.setPlayerColors();
+        this.broadcastPlayerList();
+        this.broadcastPlayerPrivateInfo();
     }
 }
 

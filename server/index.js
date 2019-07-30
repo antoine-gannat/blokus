@@ -12,7 +12,6 @@ const PORT = 4000;
 
 class Server {
     constructor() {
-        this._clients = [];
         // List of all the rooms
         this._rooms = [];
 
@@ -20,9 +19,8 @@ class Server {
         server.listen(PORT, function () {
             console.log('Starting server on port ' + PORT);
         });
-        this._io = io;
         // add callback for client connecting
-        this._io.on("connection", (socket) => {
+        io.on("connection", (socket) => {
             // create the player
             var player = new Player(this, socket);
 

@@ -34,7 +34,7 @@ module.exports = (player, server) => {
             return;
         }
         // Search if the username is already taken
-        var sameUsernameUser = room._players.find((c) => { return (c._username == player.username) });
+        var sameUsernameUser = room._players.find((c) => { return (c._username == player._username) });
         // If a player with this username already exist, send an error
         if (sameUsernameUser) {
             socket.emit("join-room:response", { error: "Someone already has this username in this room, please change" });
@@ -77,11 +77,12 @@ module.exports = (player, server) => {
             socket.emit("place-piece:response", { error: "Missing parameters" });
             return;
         }
+        var room = player._room;
         const position = data.position;
         const piece = data.piece;
 
-        if (!this.canPieceBePlaced(piece, position)) {
-            this._socket.emit("place-piece:response", { error: "You can't place this piece here" });
+        if (!room.canPieceBePlaced(piece, position)) {
+            socket.emit("place-piece:response", { error: "You can't place this piece here" });
             return;
         }
         for (var row = 0; row < constants.SHAPE_MAX_SIZE; row++) {
@@ -89,14 +90,14 @@ module.exports = (player, server) => {
                 // If the shape has a block at this position
                 if (piece._shape[row][col] == 1) {
                     // Place the block
-                    this._server._map[position.x + col][position.y + row] = this._color;
+                    room._map[position.x + col][position.y + row] = player._color;
                 }
             }
         }
         // on success
-        this._socket.emit("place-piece:response", { success: "Piece placed" });
+        socket.emit("place-piece:response", { success: "Piece placed" });
         // send the modified map to every player in the room
-        this.broadcastMap();
+        room.broadcastMap();
     });
 
     socket.on("list-rooms", () => {
@@ -106,5 +107,21 @@ module.exports = (player, server) => {
                 roomsInfo.push(room.getPublicInfo());
         });
         socket.emit("list-rooms:response", roomsInfo);
+    });
+
+    socket.on("start-game", () => {
+        // Check if the player is in a room
+        if (!player._room) {
+            socket.emit("start-game:response", { error: "You are not in a room." })
+            return;
+        }
+        // Check if the player is the admin of the room
+        if (!player._admin) {
+            socket.emit("start-game:response", { error: "You are not the admin of this room." })
+            return;
+        }
+        // start the game in the room
+        player._room.start();
+        socket.emit("start-game:response", { success: "Game started." })
     });
 }

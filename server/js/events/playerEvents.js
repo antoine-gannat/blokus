@@ -21,6 +21,6 @@ module.exports = (player, server) => {
         // save the username
         player._username = data.username;
         // On success, Send the player info to the client
-        socket.emit("login:response", player.getPrivateData());
+        socket.emit("login:response", player.getPrivateInfo());
     });
 }

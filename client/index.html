@@ -45,6 +45,9 @@
                                         onclick="g_game.login(document.getElementById('username-input').value)"
                                         class="btn btn-block mybtn btn-primary tx-tfm" id="login-btn">
                                         Log in</button>
+                                    <button type="button" onclick="window.location.reload()"
+                                        class="btn btn-block mybtn btn-danger tx-tfm" id="disconnect-btn">
+                                        Disconnect</button>
                                 </div>
                             </div>
                         </div>
@@ -91,10 +94,14 @@
     </div>
     </div>
     <!-- Player list on the side -->
-    <div id="player-list-container">
-        <h4>Players :</h4>
+    <div id="left-menu-container">
+        <h4 class="text-center">Players</h4>
         <ul id="player-list">
         </ul>
+        <button class="btn btn-primary col-md-12" id="start-game-btn" onclick="g_game.startGame()">Start the
+            game</button>
+        <br />
+        <button class="btn btn-danger col-md-12" onclick="window.location.reload()">Quit</button>
     </div>
     <!-- Include socket.io -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>

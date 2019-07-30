@@ -25,11 +25,14 @@ class Game {
         this._socket.on("place-piece:response", this.onPiecePlaced.bind(this));
         // On rooms received
         this._socket.on("list-rooms:response", this.onListRooms.bind(this));
-        // On create rooms response
+        // On join rooms response
         this._socket.on("join-room:response", this.onJoinRoomResponse.bind(this));
         // On create rooms response
         this._socket.on("create-room:response", this.onCreateRoomResponse.bind(this));
-
+        // On start game response
+        this._socket.on("start-game:response", this.onStartGameResponse.bind(this));
+        // On player info (information about the player)
+        this._socket.on("player-info", this.onPlayerInfo.bind(this));
         // allow to start the game when the 'enter' key is pressed
         document.getElementById("username-input").addEventListener("keyup", (event) => {
             // Number 13 is the "Enter" key on the keyboard
@@ -53,10 +56,13 @@ class Game {
     }
 
     // ask for a list of room
-    initCanvas() {
+    init() {
         // delete the login menu
         var loginMenu = document.getElementById("login-container");
         loginMenu.parentNode.removeChild(loginMenu);
+
+        // set the left menu visible
+        document.getElementById("left-menu-container").style.visibility = "visible";
 
         // create the canvas
         this._canvas = document.createElement("canvas");
@@ -81,6 +87,11 @@ class Game {
     login(username) {
         // authenticate
         this._socket.emit("login", { username: username });
+        this._socket.emit("list-rooms");
+    }
+
+    startGame() {
+        this._socket.emit("start-game");
     }
 
     joinRoom(roomId) {
@@ -89,6 +100,22 @@ class Game {
 
     createRoom(roomName) {
         this._socket.emit("create-room", { roomName: roomName });
+    }
+
+    onPlayerInfo(info) {
+        this._player = info;
+        if (this._player.admin)
+            document.getElementById("start-game-btn").style.visibility = "visible";
+    }
+
+    onStartGameResponse(data) {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        // hide the start button
+        document.getElementById("start-game-btn").style.visibility = "hidden";
+        document.getElementById("start-game-btn").style.position = "absolute";
     }
 
     onJoinRoomResponse(data) {
@@ -143,8 +170,12 @@ class Game {
         }
         // on success, save the player data
         this._player = data;
-        document.getElementById("login-btn").disabled = "true";
-        document.getElementById("login-btn").style.backgroundColor = "green";
+        // hide the login button
+        document.getElementById("login-btn").style.visibility = "hidden";
+        document.getElementById("login-btn").style.position = "absolute";
+        // Display the disconnect button
+        document.getElementById("disconnect-btn").style.visibility = "visible";
+        document.getElementById("disconnect-btn").style.position = "relative";
         document.getElementById("room-actions-container").style.visibility = "visible";
     }
 
@@ -173,7 +204,7 @@ class Game {
         var frameStartTime;
         var frameDuration;
         // init the canvas
-        this.initCanvas();
+        this.init();
         // init the map
         this._map.init();
         // infinite loop that will loop at 60fps

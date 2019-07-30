@@ -3,13 +3,19 @@
     position:relative;
 }
 
+#disconnect-btn
+{
+    position: absolute;
+    visibility: hidden;
+}
+
 .login-logo
 {
     width:100px;
     height:100px;
 }
 
-#player-list-container
+#left-menu-container
 {
     position:absolute;
     visibility: hidden;
@@ -22,5 +28,9 @@
 }
 
 #room-actions-container{
+    visibility: hidden;
+}
+
+#start-game-btn{
     visibility: hidden;
 }
