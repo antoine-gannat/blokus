@@ -11,14 +11,33 @@ class Map {
 
     init() {
         // Calculate the grid size
-        this._gridSize = { width: g_game._ctx.canvas.width / BOARD_SIZE, height: g_game._ctx.canvas.height / BOARD_SIZE };
+        this._gridSize = { width: g_game._boardSize.width / BOARD_SIZE, height: g_game._boardSize.height / BOARD_SIZE };
     }
 
-    placeBlock(position) {
+    placePiece(piece, position, playerColor) {
         // Get block at click position
         var block = { x: Math.floor(position.x / this._gridSize.width), y: Math.floor(position.y / this._gridSize.height) };
-        // Set block
-        this._map[block.x][block.y] = COLORS.BLUE;
+
+        // Start by checking if we can place the piece there
+        for (var row = 0; row < SHAPE_MAX_SIZE; row++) {
+            for (var col = 0; col < SHAPE_MAX_SIZE; col++) {
+                // If the shape has a block at this position and the map is not empty there
+                if (piece._shape[row][col] == 1 && this._map[block.x + col][block.y + row] != COLORS.EMPTY) {
+                    return (false);
+                }
+            }
+        }
+        // Now that we know the map is empty at this emplacement, copy the piece there
+        for (var row = 0; row < SHAPE_MAX_SIZE; row++) {
+            for (var col = 0; col < SHAPE_MAX_SIZE; col++) {
+                // If the shape has a block at this position
+                if (piece._shape[row][col] == 1) {
+                    // Place the block
+                    this._map[block.x + col][block.y + row] = playerColor;
+                }
+            }
+        }
+        return (true);
     }
 
     render() {
@@ -54,7 +73,7 @@ class Map {
             // Start at the top
             g_game._ctx.moveTo(this._gridSize.width * i, 0);
             // To the bottom
-            g_game._ctx.lineTo(this._gridSize.width * i, g_game._ctx.canvas.height);
+            g_game._ctx.lineTo(this._gridSize.width * i, g_game._boardSize.height);
             g_game._ctx.stroke();
 
             // Draw the horizontal line
@@ -62,7 +81,7 @@ class Map {
             // Start at the left
             g_game._ctx.moveTo(0, this._gridSize.height * i);
             // To the right
-            g_game._ctx.lineTo(g_game._ctx.canvas.width, this._gridSize.height * i);
+            g_game._ctx.lineTo(g_game._boardSize.width, this._gridSize.height * i);
             g_game._ctx.stroke();
         }
     }

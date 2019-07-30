@@ -1,10 +1,10 @@
 module.exports = {
     COLORS: {
-        BLUE: "Blue",
-        RED: "Red",
-        GREEN: "Green",
-        YELLOW: "Yellow",
-        EMPTY: "Empty"
+        BLUE: "blue",
+        RED: "red",
+        GREEN: "green",
+        YELLOW: "yellow",
+        EMPTY: "empty"
     },
     ORIENTATIONS: {
         UP: "Up",
@@ -12,5 +12,8 @@ module.exports = {
         LEFT: "Left",
         RIGHT: "Right"
     },
-    NB_OF_PIECES: 21
+    NB_OF_PIECES: 21,
+
+    // Max length or height of a piece
+    SHAPE_MAX_SIZE: 5
 }

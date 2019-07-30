@@ -12,11 +12,11 @@ const SERVER_PORT = 4000;
 const SERVER_URL = "http://localhost";
 
 const COLORS = {
-    BLUE: "Blue",
-    RED: "Red",
-    GREEN: "Green",
-    YELLOW: "Yellow",
-    EMPTY: "Empty"
+    BLUE: "blue",
+    RED: "red",
+    GREEN: "green",
+    YELLOW: "yellow",
+    EMPTY: "empty"
 }
 
 const ORIENTATIONS = {
