@@ -1,3 +1,2 @@
+// instantiate the game class
 var g_game = new Game();
-
-g_game.run();

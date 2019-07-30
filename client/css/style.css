@@ -1,0 +1,26 @@
+#login-container
+{
+    position:relative;
+}
+
+.login-logo
+{
+    width:100px;
+    height:100px;
+}
+
+#player-list-container
+{
+    position:absolute;
+    visibility: hidden;
+}
+
+.scrollable-table
+{
+    overflow-y: auto;
+    height: 250px;
+}
+
+#room-actions-container{
+    visibility: hidden;
+}

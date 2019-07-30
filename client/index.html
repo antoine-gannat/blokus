@@ -14,12 +14,88 @@
     <!-- Include Fontawesome -->
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
         integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+    <link rel="stylesheet" href="./css/style.css" />
 
 </head>
 
 <body>
-    <!-- Main canvas -->
-    <canvas id="game-canvas"></canvas>
+    <!-- Login form -->
+    <div id="login-container" class="container mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-5 mx-auto">
+                    <div id="first">
+                        <div class="myform form ">
+                            <div class="logo mb-3">
+                                <div class="col-md-12 text-center">
+                                    <img src="resources/favicon.jpg" class="login-logo" />
+                                    <h1>Blokus Online</h1>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div>
+                                <div class="form-group">
+                                    <label for="username-input">Username</label>
+                                    <input type="text" name="username" class="form-control" id="username-input"
+                                        placeholder="Enter your username" autocomplete="off" required="true" />
+                                </div>
+                                <div class="col-md-12 text-center">
+                                    <button type="button"
+                                        onclick="g_game.login(document.getElementById('username-input').value)"
+                                        class="btn btn-block mybtn btn-primary tx-tfm" id="login-btn">
+                                        Log in</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="room-actions-container">
+                            <br />
+                            <h3 class="text-center">Join a room</h3>
+                            <div>
+                                <label>Available Rooms:</label>
+                                <div class="scrollable-table">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Name</th>
+                                                <th scope="col">Players</th>
+                                                <th scope="col">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="room-table">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                            <h3 class="text-center">Or create one !</h3>
+                            <div>
+                                <div class="form-group">
+                                    <label for="room-name-input">Room name</label>
+                                    <input type="text" name="room-name" class="form-control" id="room-name-input"
+                                        placeholder="Enter the room name" autocomplete="off" />
+                                </div>
+                                <div class="col-md-12 text-center">
+                                    <button type="button"
+                                        onclick="g_game.createRoom(document.getElementById('room-name-input').value)"
+                                        class="btn btn-block mybtn btn-primary tx-tfm">
+                                        Create a room</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+    <!-- Player list on the side -->
+    <div id="player-list-container">
+        <h4>Players :</h4>
+        <ul id="player-list">
+        </ul>
+    </div>
     <!-- Include socket.io -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
     <!-- Constant values -->
