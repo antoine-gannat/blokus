@@ -3,12 +3,15 @@ var http = require('http');
 var socketIO = require('socket.io');
 
 var app = express();
-var server = http.Server(app);
-var io = socketIO(server);
+var httpServer = http.Server(app);
+var io = socketIO(httpServer);
 
 var Player = require('./js/player');
 
 const PORT = 4000;
+
+// Host the client
+app.use('/', express.static('../client'));
 
 class Server {
     constructor() {
@@ -16,7 +19,7 @@ class Server {
         this._rooms = [];
 
         // Start the server
-        server.listen(PORT, function () {
+        httpServer.listen(PORT, function () {
             console.log('Starting server on port ' + PORT);
         });
         // add callback for client connecting
