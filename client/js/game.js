@@ -16,6 +16,9 @@ class Game {
 
         // Set listeners
         // On login response
+        this._socket.on("connect_error", (error) => {
+            Notifications.error("Unable to reach the server, try again later");
+        });
         this._socket.on("login:response", this.onLoginResponse.bind(this));
         // On player list received
         this._socket.on("player-list", this.onPlayerList.bind(this));
