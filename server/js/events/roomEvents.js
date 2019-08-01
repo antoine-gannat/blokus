@@ -81,18 +81,9 @@ module.exports = (player, server) => {
         const position = data.position;
         const piece = data.piece;
 
-        if (!room.canPieceBePlaced(piece, position)) {
+        if (!room.placePiece(piece, position, player._color)) {
             socket.emit("place-piece:response", { error: "You can't place this piece here" });
             return;
-        }
-        for (var row = 0; row < constants.SHAPE_MAX_SIZE; row++) {
-            for (var col = 0; col < constants.SHAPE_MAX_SIZE; col++) {
-                // If the shape has a block at this position
-                if (piece._shape[row][col] == 1) {
-                    // Place the block
-                    room._map[position.x + col][position.y + row] = player._color;
-                }
-            }
         }
         // on success
         socket.emit("place-piece:response", { success: "Piece placed" });

@@ -55,15 +55,8 @@ class Game {
         this._socket.emit("list-rooms");
     }
 
-    // ask for a list of room
-    init() {
-        // delete the login menu
-        var loginMenu = document.getElementById("login-container");
-        loginMenu.parentNode.removeChild(loginMenu);
-
-        // set the left menu visible
-        document.getElementById("left-menu-container").style.visibility = "visible";
-
+    // init the canvas
+    initCanvas() {
         // create the canvas
         this._canvas = document.createElement("canvas");
         // add the canvas to the body
@@ -84,9 +77,22 @@ class Game {
         this._canvas.addEventListener("mousemove", this.saveMousePos.bind(this));
     }
 
+    // init the game
+    init() {
+        // delete the login menu
+        var loginMenu = document.getElementById("login-container");
+        loginMenu.parentNode.removeChild(loginMenu);
+
+        // set the left menu visible
+        document.getElementById("left-menu-container").style.visibility = "visible";
+
+        this.initCanvas();
+    }
+
     login(username) {
         // authenticate
         this._socket.emit("login", { username: username });
+        // ask for a list of room
         this._socket.emit("list-rooms");
     }
 
@@ -110,7 +116,7 @@ class Game {
 
     onStartGameResponse(data) {
         if (data.error) {
-            alert(data.error);
+            Notifications.error(data.error);
             return;
         }
         // hide the start button
@@ -120,7 +126,7 @@ class Game {
 
     onJoinRoomResponse(data) {
         if (data.error) {
-            alert(data.error);
+            Notifications.error(data.error);
             return;
         }
         this.run();
@@ -128,7 +134,7 @@ class Game {
 
     onCreateRoomResponse(data) {
         if (data.error) {
-            alert(data.error);
+            Notifications.error(data.error);
             return;
         }
         // on success, go to the game
@@ -163,11 +169,12 @@ class Game {
 
     onLoginResponse(data) {
         if (data.error) {
-            alert(data.error);
+            Notifications.error(data.error);
             // reload window
             window.location.reload();
             return;
         }
+        Notifications.success("You are logged in !");
         // on success, save the player data
         this._player = data;
         // hide the login button
@@ -189,7 +196,7 @@ class Game {
             this._sideMenu._selectedPiece = null;
         }
         else if (response.error) {
-            alert(response.error);
+            Notifications.error(response.error);
         }
     }
 

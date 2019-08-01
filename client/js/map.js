@@ -1,7 +1,6 @@
 class Map {
     constructor(map) {
         this._map = map;
-
         this._piecesOpacity = 0.7;
     }
 
@@ -35,9 +34,9 @@ class Map {
         // Draw the board content
         for (var col = 0; col < BOARD_SIZE; col++) {
             for (var row = 0; row < BOARD_SIZE; row++) {
-                if (this._map[col][row] == COLORS.EMPTY)
+                if (this._map[row][col] == COLORS.EMPTY)
                     continue;
-                switch (this._map[col][row]) {
+                switch (this._map[row][col]) {
                     case COLORS.RED:
                         g_game._ctx.fillStyle = "red";
                         break;

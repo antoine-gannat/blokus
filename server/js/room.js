@@ -59,21 +59,149 @@ class Room {
         });
     }
 
-    canPieceBePlaced(piece, position) {
+    // Map //
+
+    // Return the number of blocks of this color on the map
+    getNbBlockOfColor(researchedColor) {
+        var nbBlocksFound = 0;
+        // for each row on the map
+        this._map.forEach((row) => {
+            // For each block on the row
+            row.forEach((block) => {
+                if (block == researchedColor)
+                    nbBlocksFound++;
+            });
+        });
+        return (nbBlocksFound);
+    }
+
+    // Piece placement // 
+
+    // Check if a piece of the same color touch one of the sides
+    hasFriendlyBlocksOnSides(shapePosition, position, playerColor) {
+        var leftPiece = ((position.x + shapePosition.x - 1 >= 0) ? this._map[position.y + shapePosition.y][position.x + shapePosition.x - 1] : null);
+        var rightPiece = ((position.x + shapePosition.x + 1 < constants.BOARD_SIZE) ? this._map[position.y + shapePosition.y][position.x + shapePosition.x + 1] : null);
+        var topPiece = ((position.y + shapePosition.y - 1 >= 0) ? this._map[position.y + shapePosition.y - 1][position.x + shapePosition.x] : null);
+        var downPiece = ((position.y + shapePosition.y + 1 < constants.BOARD_SIZE) ? this._map[position.y + shapePosition.y + 1][position.x + shapePosition.x] : null);
+
+        // Check if the side pieces have the same color as the player
+        if (leftPiece && leftPiece == playerColor)
+            return (true);
+        if (rightPiece && rightPiece == playerColor)
+            return (true);
+        if (topPiece && topPiece == playerColor)
+            return (true);
+        if (downPiece && downPiece == playerColor)
+            return (true);
+        return (false);
+    }
+
+    hasFriendlyBlocksOnDiagonals(shapePosition, position, playerColor) {
+        // Get the piece color at the top left position (x-1 y-1)
+        var topLeftPiece = ((position.x + shapePosition.x - 1 >= 0 && position.y + shapePosition.y - 1 >= 0)
+            ? this._map[position.y + shapePosition.y - 1][position.x + shapePosition.x - 1]
+            : null);
+        // (x+1 y-1)
+        var topRightPiece = ((position.x + shapePosition.x + 1 < constants.BOARD_SIZE && position.y + shapePosition.y - 1 >= 0)
+            ? this._map[position.y + shapePosition.y - 1][position.x + shapePosition.x + 1]
+            : null);
+        // (x-1 y+1)
+        var downLeftPiece = ((position.y + shapePosition.y + 1 < constants.BOARD_SIZE && position.x + shapePosition.x - 1 >= 0)
+            ? this._map[position.y + shapePosition.y + 1][position.x + shapePosition.x - 1]
+            : null);
+        //(x+1 y+1)
+        var downRightPiece = ((position.y + shapePosition.y + 1 < constants.BOARD_SIZE && position.x + shapePosition.x + 1 < constants.BOARD_SIZE)
+            ? this._map[position.y + shapePosition.y + 1][position.x + shapePosition.x + 1]
+            : null);
+        if (topLeftPiece && topLeftPiece == playerColor)
+            return (true);
+        if (topRightPiece && topRightPiece == playerColor)
+            return (true);
+        if (downLeftPiece && downLeftPiece == playerColor)
+            return (true);
+        if (downRightPiece && downRightPiece == playerColor)
+            return (true);
+        return (false);
+    }
+
+    isTryingToPlacePieceInCorner(piece, position) {
         // for each row in the shape of the piece
         for (var row = 0; row < constants.SHAPE_MAX_SIZE; row++) {
             // for each column
             for (var col = 0; col < constants.SHAPE_MAX_SIZE; col++) {
-                // If the shape has a block at this position and the map is not empty there
-                if (piece._shape[row][col] == 1
-                    && ((position.x + col >= constants.BOARD_SIZE || position.y + row >= constants.BOARD_SIZE)
-                        || (this._map[position.x + col][position.y + row] != constants.COLORS.EMPTY))) {
+                // If this position on the shape is empty, continue
+                if (piece._shape[row][col] == 0)
+                    continue;
+                // Check if the piece will fit on the map
+                if (position.x + col >= constants.BOARD_SIZE || position.y + row >= constants.BOARD_SIZE)
+                    continue;
+                // Check if the position of the shape is in one of the corners
+                if ((position.x + col == 0 && position.y + row == 0) // check for top left corner
+                    || (position.x + col == constants.BOARD_SIZE - 1 && position.y + row == 0)// check for top right corner
+                    || (position.x + col == 0 && position.y + row == constants.BOARD_SIZE - 1)// check for down left corner
+                    || (position.x + col == constants.BOARD_SIZE - 1 && position.y + row == constants.BOARD_SIZE - 1))// check for down right corner
+                {
+                    return (true);
+                }
+            }
+        }
+        // if no corner was found
+        return (false);
+    }
+
+    // Check if a piece can be placed
+    canPieceBePlaced(piece, position, playerColor) {
+        var friendlyBlockFound = false;
+        // on first piece placed
+        if (this.getNbBlockOfColor(playerColor) == 0 && this.isTryingToPlacePieceInCorner(piece, position)) {
+            friendlyBlockFound = true;
+        }
+        // for each row in the shape of the piece
+        for (var row = 0; row < constants.SHAPE_MAX_SIZE; row++) {
+            // for each column
+            for (var col = 0; col < constants.SHAPE_MAX_SIZE; col++) {
+                // If this position on the shape is empty, continue
+                if (piece._shape[row][col] == 0)
+                    continue;
+                // Check if the piece will fit on the map
+                if (position.x + col >= constants.BOARD_SIZE || position.y + row >= constants.BOARD_SIZE) {
                     return (false);
+                }
+                // Check if there is already a piece at this position on the map
+                if (this._map[position.y + row][position.x + col] != constants.COLORS.EMPTY) {
+                    return (false);
+                }
+                // Check for same color blocks on the side
+                if (this.hasFriendlyBlocksOnSides({ x: col, y: row }, position, playerColor)) {
+                    return (false);
+                }
+                if (this.hasFriendlyBlocksOnDiagonals({ x: col, y: row }, position, playerColor))
+                    friendlyBlockFound = true;
+            }
+        }
+        // if no friendly blocks were found nearby
+        if (!friendlyBlockFound) {
+            return (false);
+        }
+        return (true);
+    }
+
+    placePiece(piece, position, playerColor) {
+        if (!this.canPieceBePlaced(piece, position, playerColor))
+            return (false);
+        // for each row in the shape of the piece
+        for (var row = 0; row < constants.SHAPE_MAX_SIZE; row++) {
+            for (var col = 0; col < constants.SHAPE_MAX_SIZE; col++) {
+                // If the shape has a block at this position
+                if (piece._shape[row][col] == 1) {
+                    // Place the block
+                    this._map[position.y + row][position.x + col] = playerColor;
                 }
             }
         }
         return (true);
     }
+    // Player actions //
 
     removePlayer(playerId) {
         // search the player
@@ -122,6 +250,8 @@ class Room {
     sendPlayerInfo(player) {
         player._socket.emit("player-info", player.getPrivateInfo());
     }
+
+    // Room actions //
 
     getPublicInfo() {
         return ({
