@@ -10,8 +10,9 @@ class Room {
         // list of all the players in the room
         this._players = [];
         // index of the next player to play
-        this._playerTurnIndex;
+        this._playerTurnIndex = null;
         this._map = this.resetMap();
+        // All available colors ordered according to the first color to play
         this._availableColors = [constants.COLORS.BLUE, constants.COLORS.YELLOW, constants.COLORS.RED, constants.COLORS.GREEN];
 
         console.log("Room " + name + " created");
@@ -203,6 +204,36 @@ class Room {
     }
     // Player actions //
 
+    getNextPlayerTurn() {
+        // if it's the first turn, give the turn to the blue player
+        if (this._playerTurnIndex == null) {
+            // The blue player is the first one
+            this._playerTurnIndex = 0;
+        }
+        else {
+            // Set to false the playTurn of the previous player 
+            this._players[this._playerTurnIndex]._playTurn = false;
+            // Get the next player
+            if (this._playerTurnIndex + 1 < this._players.length)
+                this._playerTurnIndex++;
+            else
+                this._playerTurnIndex = 0;
+        }
+        this._players[this._playerTurnIndex]._playTurn = true;
+        return (this._playerTurnIndex);
+    }
+
+    isPlayerTurn(player) {
+        // Get the player index in the player list
+        var thisPlayerIndex = this._players.findIndex((p) => { return (p._id == player._id); });
+
+        console.log(thisPlayerIndex);
+        // If this player index is not the one that should be playing
+        if (thisPlayerIndex != this._playerTurnIndex)
+            return (false);
+        return (true);
+    }
+
     removePlayer(playerId) {
         // search the player
         var playerIndex = this._players.findIndex((p) => { return (p._id == playerId) });
@@ -258,15 +289,20 @@ class Room {
             id: this._id,
             nbPlayers: this._players.length,
             name: this._name
-        })
+        });
     }
 
     // start the game
     start() {
         console.log("starting room: " + this._name);
         this._started = true;
+        // Give the players their colors
         this.setPlayerColors();
+        // Get the index of the next player to play
+        this.getNextPlayerTurn();
+        // Broadcast to all players the list of players
         this.broadcastPlayerList();
+        // Broadcase to each player his own private information
         this.broadcastPlayerPrivateInfo();
     }
 }

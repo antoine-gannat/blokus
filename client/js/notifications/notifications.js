@@ -7,6 +7,10 @@ class Notifications {
     static error(message, duration = 3000) {
         this.sendNotification(message, 'error', duration);
     }
+    // Send an error message
+    static info(message, duration = 3000) {
+        this.sendNotification(message, 'info', duration);
+    }
 
     static sendNotification(message, type, duration = 3000) {
         new Noty({

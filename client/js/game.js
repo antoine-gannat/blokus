@@ -1,15 +1,13 @@
 class Game {
     constructor() {
-        // Set the canvas size to 90% of the screen size
-        const boardToScreenRatio = 5;
-        this._borderPadding = ((boardToScreenRatio * window.innerHeight) / 100);
-        // size of the menu containing the pieces 
-        this._sideMenuSize = { width: (20 * window.innerWidth) / 100, height: window.innerHeight - this._borderPadding };
-        this._boardSize = { width: window.innerHeight - this._borderPadding, height: window.innerHeight - this._borderPadding };
         // generate the map
         this._map = new Map();
         // The player
         this._player = null;
+        // UI elements
+        this._uis = [];
+        // Set the sizes according to the screen size
+        this.resize();
         // Connect to the server
         console.log("Connect to " + SERVER_URL + ":" + SERVER_PORT);
         this._socket = io.connect(SERVER_URL + ":" + SERVER_PORT, { secure: true });
@@ -46,38 +44,112 @@ class Game {
                 document.getElementById("login-btn").click();
             }
         });
-
-        // Create the side menu
-        this._sideMenu = new SideMenu({
-            x: this._boardSize.width,
-            y: 0
-        }, this._sideMenuSize);
+        window.addEventListener("resize", this.resize.bind(this), false);
+        // Create the piece list
+        this._pieceList = new PieceList(this._pieceListMenuRect);
+        // Create the player list
+        this._playerList = new PlayerList(this._playerListMenuRect);
 
         // Last known position of the mouse
         this._mousePos = { x: 0, y: 0 };
         this._socket.emit("list-rooms");
     }
 
+    // screen size adaptation //
+
+    isSmallScreen() {
+        const smallScreenMaxWidth = 1000;
+        if (window.innerWidth <= smallScreenMaxWidth)
+            return (true);
+        return (false);
+    }
+
+    resize() {
+        // Resize for small screens
+        if (this.isSmallScreen()) {
+            const bottomMenuHeightPercentage = 20;
+            const playerListWidthPercentage = 10;
+            const bottomMenuHeight = (bottomMenuHeightPercentage * window.innerHeight) / 100;
+            // Set the size of the board (full width on small screens)
+            this._boardSizeRect = {
+                width: window.innerHeight,
+                height: window.innerHeight - bottomMenuHeight,
+                x: 0,
+                y: 0
+            };
+            // Set the size of the player list
+            this._playerListMenuRect = {
+                width: (playerListWidthPercentage * window.innerWidth) / 100,
+                height: bottomMenuHeight,
+                x: 0,
+                y: this._boardSizeRect.height
+            };
+            // Set the size of the piece list
+            this._pieceListMenuRect = {
+                width: window.innerWidth - this._playerListMenuRect.width,
+                height: bottomMenuHeight,
+                x: this._playerListMenuRect.width,
+                y: this._boardSizeRect.height
+            }
+        }
+        // Big screens
+        else {
+            const playerListWidthPercentage = 10;
+            const pieceListWidthPercentage = 20;
+            // Set the size of the player list
+            this._playerListMenuRect = {
+                width: (playerListWidthPercentage * window.innerWidth) / 100,
+                height: window.innerHeight,
+                x: 0,
+                y: 0
+            };
+            // Set the size of the piece list
+            this._pieceListMenuRect = {
+                width: (pieceListWidthPercentage * window.innerWidth) / 100,
+                height: window.innerHeight,
+                x: 0,
+                y: 0
+            }
+            // Set the size of the board
+            var boardSize = window.innerWidth - this._playerListMenuRect.width - this._pieceListMenuRect.width;
+            if (boardSize > window.innerHeight)
+                boardSize = window.innerHeight;
+            this._boardSizeRect = {
+                width: boardSize,
+                height: boardSize,
+                x: this._playerListMenuRect.width,
+                y: 0
+            };
+            // Set the x position of the piece menu based on the board and player list position 
+            this._pieceListMenuRect.x = this._playerListMenuRect.width + this._boardSizeRect.width + 50;
+        }
+        var startGameBtn = this._uis.find((ui) => { return (ui._text == "Start game"); });
+        var quitBtn = this._uis.find((ui) => { return (ui._text == "Quit"); });
+        if (this._pieceList)
+            this._pieceList.resize(this._pieceListMenuRect);
+        if (this._playerList)
+            this._playerList.resize(this._playerListMenuRect);
+        if (this._map && g_game)
+            this._map.setGridSize();
+        if (!this._ctx)
+            return;
+        this._ctx.canvas.width = window.innerWidth;
+        this._ctx.canvas.height = window.innerHeight;
+    }
+
     // init the canvas
     initCanvas() {
         // create the canvas
         this._canvas = document.createElement("canvas");
+
         // add the canvas to the body
         document.body.appendChild(this._canvas);
         // get the canvas context
         this._ctx = this._canvas.getContext("2d");
-
-        // Set the size of the canvas
-        this._ctx.canvas.width = this._boardSize.width + this._sideMenuSize.width;
-        this._ctx.canvas.height = this._boardSize.height;
-
-        // Set the margin of the canvas
-        this._ctx.canvas.style.marginLeft = ((window.innerWidth - this._ctx.canvas.width) / 2) + "px";
-        this._ctx.canvas.style.marginTop = (this._borderPadding / 2) + "px";
-
         // add an event listener on the canvas
         this._canvas.addEventListener("click", this.onClick.bind(this));
         this._canvas.addEventListener("mousemove", this.saveMousePos.bind(this));
+        this.resize();
     }
 
     // init the game
@@ -86,10 +158,13 @@ class Game {
         var loginMenu = document.getElementById("login-container");
         loginMenu.parentNode.removeChild(loginMenu);
 
-        // set the left menu visible
-        document.getElementById("left-menu-container").style.visibility = "visible";
-
         this.initCanvas();
+        this._uis.push(new UiButton({
+            x: this._playerListMenuRect.x,
+            y: this._playerListMenuRect.y + this._playerListMenuRect.height - 60,
+            width: this._playerListMenuRect.width,
+            height: 50
+        }, "red", "white", "Quit", () => { window.location.reload(); }));
     }
 
     login(username) {
@@ -113,8 +188,15 @@ class Game {
 
     onPlayerInfo(info) {
         this._player = info;
-        if (this._player.admin)
-            document.getElementById("start-game-btn").style.visibility = "visible";
+        // add a start game btn if admin
+        if (this._player.admin) {
+            this._uis.push(new UiButton({
+                x: this._playerListMenuRect.x,
+                y: this._playerListMenuRect.y + this._playerListMenuRect.height - 120,
+                width: this._playerListMenuRect.width,
+                height: 50
+            }, "green", "white", "Start game", this.startGame.bind(this)));
+        }
     }
 
     onStartGameResponse(data) {
@@ -123,8 +205,9 @@ class Game {
             return;
         }
         // hide the start button
-        document.getElementById("start-game-btn").style.visibility = "hidden";
-        document.getElementById("start-game-btn").style.position = "absolute";
+        var startGameBtn = this._uis.find((ui) => { return (ui._text == "Start game"); });
+        if (startGameBtn)
+            startGameBtn.changeVisibility();
     }
 
     onJoinRoomResponse(data) {
@@ -163,10 +246,11 @@ class Game {
 
     // When receving the player list
     onPlayerList(playerList) {
-        var playerListElement = document.getElementById("player-list");
-        playerListElement.innerHTML = "";
+        this._playerList.setPlayerList(playerList);
+        // Search for the player in the list, and send a notification if it's his turn
         playerList.forEach((player) => {
-            playerListElement.innerHTML += "<li style='color:" + player.color + "'>" + player.username + "</li>";
+            if (player.id == this._player.id && player.playTurn)
+                Notifications.info("It's your turn to play !");
         });
     }
 
@@ -191,12 +275,12 @@ class Game {
 
     onMapReceived(map) {
         this._map = new Map(map);
-        this._map.init();
+        this._map.setGridSize();
     }
 
     onPiecePlaced(response) {
         if (response.success) {
-            this._sideMenu._selectedPiece = null;
+            this._pieceList._selectedPiece = null;
         }
         else if (response.error) {
             Notifications.error(response.error);
@@ -215,8 +299,8 @@ class Game {
         var frameDuration;
         // init the canvas
         this.init();
-        // init the map
-        this._map.init();
+        // setGridSize of the map
+        this._map.setGridSize();
         // infinite loop that will loop at 60fps
         while (true) {
             // get the frame start time
@@ -237,37 +321,35 @@ class Game {
     tick() {
         this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
         this._ctx.fillStyle = "#F5F5F5";
-        this._ctx.fillRect(0, 0, this._boardSize.width, this._boardSize.height);
-        // don't render the board or the sidemenu until the player is connected
+        // Set a background color for the board
+        this._ctx.fillRect(this._boardSizeRect.x, this._boardSizeRect.y, this._boardSizeRect.width, this._boardSizeRect.height);
+        // don't render the board or the PieceList until the player is connected
         if (!this._player)
             return;
         this._map.render();
-        this._sideMenu.render();
+        this._playerList.render();
+        this._pieceList.render();
         this.renderSelectedPiece();
+        // Render the ui
+        this._uis.forEach((ui) => {
+            ui.render();
+        })
     }
 
     renderSelectedPiece() {
-        const piece = this._sideMenu._selectedPiece;
+        const piece = this._pieceList._selectedPiece;
 
         if (!piece)
             return;
         var mousePosModified = { x: this._mousePos.x - this._map._gridSize.width / 2, y: this._mousePos.y - this._map._gridSize.height / 2 };
         // render the piece 
-        this._sideMenu.renderPiece(piece, mousePosModified, this._map._gridSize);
+        this._pieceList.renderPiece(piece, mousePosModified, this._map._gridSize);
     }
 
     // clicks
 
-    getMousePosOnCanvas(event) {
-        // Calculate the position of the canvas
-        var xCanvasPos = ((window.innerWidth - this._ctx.canvas.width) / 2);
-        var yCanvasPos = ((window.innerHeight - this._ctx.canvas.height) / 2);
-        // Create a new element with the click position relative to the canvas
-        return ({ x: event.clientX - xCanvasPos, y: event.clientY - yCanvasPos });
-    }
-
     saveMousePos(event) {
-        const click = this.getMousePosOnCanvas(event)
+        const click = { x: event.clientX, y: event.clientY };
         this._mousePos.x = click.x;
         this._mousePos.y = click.y;
     }
@@ -279,30 +361,36 @@ class Game {
     }
 
     isClickOnBoard(click) {
-        return (this.isPointInRect(click, { x: 0, y: 0, width: this._boardSize.width, height: this._boardSize.height }));
+        return (this.isPointInRect(click, this._boardSizeRect));
     }
 
-    isClickOnSideMenu(click) {
-        return (this.isPointInRect(click, { x: this._sideMenu._position.x, y: this._sideMenu._position.y, width: this._sideMenu._size.width, height: this._sideMenu._size.height }));
+    isClickOnPieceList(click) {
+        return (this.isPointInRect(click, this._pieceListMenuRect));
     }
 
     onClick(event) {
-        const click = this.getMousePosOnCanvas(event)
+        const click = { x: event.clientX, y: event.clientY };
 
+        //        Notifications.info("click y: " + click.x + " y: " + click.y);
         // If the position are negative, set to 0
         if (click.x < 0)
             click.x = 0;
         if (click.y < 0)
             click.y = 0;
 
-        if (this.isClickOnBoard(click) && this._sideMenu._selectedPiece) {
+        this._uis.forEach((ui) => {
+            if (this.isPointInRect(click, ui._positionRect))
+                ui.onClick(click);
+        });
+        if (this.isClickOnBoard(click) && this._pieceList._selectedPiece) {
+            const clickRelativeToBoard = { x: click.x - this._boardSizeRect.x, y: click.y - this._boardSizeRect.y };
             // if the place was correctly placed, delete the piece
             this._socket.emit("place-piece", {
-                piece: this._sideMenu._selectedPiece,
-                position: { x: Math.floor(click.x / this._map._gridSize.width), y: Math.floor(click.y / this._map._gridSize.height) }
+                piece: this._pieceList._selectedPiece,
+                position: { x: Math.floor(clickRelativeToBoard.x / this._map._gridSize.width), y: Math.floor(clickRelativeToBoard.y / this._map._gridSize.height) }
             });
         }
-        else if (this.isClickOnSideMenu(click))
-            this._sideMenu.selectPiece(click);
+        else if (this.isClickOnPieceList(click))
+            this._pieceList.selectPiece(click);
     }
 }

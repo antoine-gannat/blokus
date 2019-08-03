@@ -81,14 +81,24 @@ module.exports = (player, server) => {
         const position = data.position;
         const piece = data.piece;
 
+        // Check if it's this player turn
+        if (!room.isPlayerTurn(player)) {
+            socket.emit("place-piece:response", { error: "It's not your turn to play, please wait" });
+            return;
+        }
+        console.log("tring to place piece at pos " + position.x + " " + position.y);
         if (!room.placePiece(piece, position, player._color)) {
             socket.emit("place-piece:response", { error: "You can't place this piece here" });
             return;
         }
         // on success
         socket.emit("place-piece:response", { success: "Piece placed" });
+        // Get the next player that should play
+        room.getNextPlayerTurn();
         // send the modified map to every player in the room
         room.broadcastMap();
+        // Send the players infos
+        room.broadcastPlayerList();
     });
 
     socket.on("list-rooms", () => {

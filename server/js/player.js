@@ -10,6 +10,7 @@ class Player {
         this._pieces = pieceFactory.createAllPieces();
         this._color = null;
         this._username = null;
+        this._playTurn = false;
         // room of the user
         this._room = null;
         // true if the user is the admin of the room
@@ -23,7 +24,8 @@ class Player {
             pieces: this._pieces,
             color: this._color,
             username: this._username,
-            admin: this._admin
+            admin: this._admin,
+            playTurn: this._playTurn
         });
     }
 
@@ -33,7 +35,8 @@ class Player {
             id: this._id,
             color: this._color,
             username: this._username,
-            admin: this._admin
+            admin: this._admin,
+            playTurn: this._playTurn
         });
     }
 }

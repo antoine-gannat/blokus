@@ -1,17 +1,27 @@
-class SideMenu {
-    constructor(position, size) {
-        this._size = size;
-        this._position = position;
-        // Calculate the size of a block of a piece
-        const pieceBlockSizePercentage = 7;
-        this._pieceBlockSize = { width: (pieceBlockSizePercentage * this._size.width) / 100, height: (pieceBlockSizePercentage * this._size.width) / 100 };
-        // Margin between each piece
-        this._piecesMargin = 20;
-        this._lineHeight = this._pieceBlockSize.height * (SHAPE_MAX_SIZE) + this._piecesMargin;
+class PieceList {
+    constructor(positionRect) {
+        this.resize(positionRect);
         this._selectedPiece = null;
     }
 
+    resize(positionRect) {
+        this._positionRect = positionRect;
+        // Calculate the size of a block of a piece
+        const nbBlocks = NB_OF_PIECES * SHAPE_MAX_SIZE;
+        const biggestSide = (this._positionRect.width > this._positionRect.height ? this._positionRect.width : this._positionRect.height);
+        this._pieceBlockSize = {
+            width: (biggestSide / nbBlocks) * 1.5,
+            height: (biggestSide / nbBlocks) * 1.5
+        };
+        // Margin between each piece
+        this._piecesMargin = 20;
+        this._lineHeight = this._pieceBlockSize.height * (SHAPE_MAX_SIZE) + this._piecesMargin;
+    }
+
     selectPiece(click) {
+        // Disable piece selection until the game has started
+        if (!g_game || !g_game._player || !g_game._player.color)
+            return;
         // if we already have a selected piece
         if (this._selectedPiece) {
             g_game._player.pieces.push(this._selectedPiece);
@@ -48,10 +58,10 @@ class SideMenu {
     }
 
     render() {
-        const beginXPos = this._position.x + this._piecesMargin;
-        var drawingPos = { x: beginXPos, y: this._position.y + this._piecesMargin };
+        const beginXPos = this._positionRect.x + this._piecesMargin;
+        var drawingPos = { x: beginXPos, y: this._positionRect.y + this._piecesMargin };
         g_game._ctx.fillStyle = "#E9E9E9";
-        g_game._ctx.fillRect(this._position.x, this._position.y, this._size.width, this._size.height);
+        g_game._ctx.fillRect(this._positionRect.x, this._positionRect.y, this._positionRect.width, this._positionRect.height);
         // for each piece of the player
         g_game._player.pieces.forEach(piece => {
             // render this piece
@@ -61,7 +71,7 @@ class SideMenu {
             // change the drawing position to the next one
             drawingPos.x += ((piece._size.width + 1) * this._pieceBlockSize.width) + this._piecesMargin;
             // if the x position is outside of the canvas
-            if (drawingPos.x + this._pieceBlockSize.width + this._piecesMargin > this._position.x + this._size.width) {
+            if (drawingPos.x + this._pieceBlockSize.width + this._piecesMargin > this._positionRect.x + this._positionRect.width) {
                 // reset x to the begining
                 drawingPos.x = beginXPos;
                 // increase y position

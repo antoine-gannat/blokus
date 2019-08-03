@@ -4,12 +4,13 @@ class Map {
         this._piecesOpacity = 0.7;
     }
 
-    init() {
-        this._gridSize = { width: g_game._boardSize.width / BOARD_SIZE, height: g_game._boardSize.height / BOARD_SIZE };
+    setGridSize() {
         // Calculate the grid size
+        this._gridSize = { width: g_game._boardSizeRect.width / BOARD_SIZE, height: g_game._boardSizeRect.height / BOARD_SIZE };
     }
 
     render() {
+        const boardRect = g_game._boardSizeRect;
         g_game._ctx.globalAlpha = 0.5;
         g_game._ctx.lineWidth = 1;
         // Render the grid
@@ -18,22 +19,22 @@ class Map {
             // Draw the vertical line
             g_game._ctx.beginPath();
             // Start at the top
-            g_game._ctx.moveTo(this._gridSize.width * i, 0);
+            g_game._ctx.moveTo(boardRect.x + this._gridSize.width * i, boardRect.y);
             // To the bottom
-            g_game._ctx.lineTo(this._gridSize.width * i, g_game._boardSize.height);
+            g_game._ctx.lineTo(boardRect.x + this._gridSize.width * i, boardRect.height + boardRect.y);
             g_game._ctx.stroke();
 
             // Draw the horizontal line
             g_game._ctx.beginPath();
             // Start at the left
-            g_game._ctx.moveTo(0, this._gridSize.height * i);
+            g_game._ctx.moveTo(boardRect.x, boardRect.y + this._gridSize.height * i);
             // To the right
-            g_game._ctx.lineTo(g_game._boardSize.width, this._gridSize.height * i);
+            g_game._ctx.lineTo(boardRect.width + boardRect.x, boardRect.y + this._gridSize.height * i);
             g_game._ctx.stroke();
         }
         // Draw the board content
-        for (var col = 0; col < BOARD_SIZE; col++) {
-            for (var row = 0; row < BOARD_SIZE; row++) {
+        for (var row = 0; row < BOARD_SIZE; row++) {
+            for (var col = 0; col < BOARD_SIZE; col++) {
                 if (this._map[row][col] == COLORS.EMPTY)
                     continue;
                 switch (this._map[row][col]) {
@@ -41,10 +42,10 @@ class Map {
                         g_game._ctx.fillStyle = "red";
                         break;
                     case COLORS.GREEN:
-                        g_game._ctx.fillStyle = "green";
+                        g_game._ctx.fillStyle = "#65A752";
                         break;
                     case COLORS.YELLOW:
-                        g_game._ctx.fillStyle = "yellow";
+                        g_game._ctx.fillStyle = "#E3BF47";
                         break;
                     case COLORS.BLUE:
                         g_game._ctx.fillStyle = "blue";
@@ -53,9 +54,9 @@ class Map {
                         break;
                 }
                 g_game._ctx.globalAlpha = this._piecesOpacity;
-                g_game._ctx.fillRect(col * this._gridSize.width, row * this._gridSize.width, this._gridSize.width, this._gridSize.height);
+                g_game._ctx.fillRect(boardRect.x + col * this._gridSize.width, boardRect.y + row * this._gridSize.height, this._gridSize.width, this._gridSize.height);
                 g_game._ctx.globalAlpha = 1;
-                g_game._ctx.rect(col * this._gridSize.width, row * this._gridSize.width, this._gridSize.width, this._gridSize.height);
+                g_game._ctx.rect(boardRect.x + col * this._gridSize.width, boardRect.y + row * this._gridSize.height, this._gridSize.width, this._gridSize.height);
             }
         }
         g_game._ctx.globalAlpha = 1;
