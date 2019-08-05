@@ -33,6 +33,8 @@ class Game {
         this._socket.on("create-room:response", this.onCreateRoomResponse.bind(this));
         // On start game response
         this._socket.on("start-game:response", this.onStartGameResponse.bind(this));
+        // on rotate response
+        this._socket.on("rotate-piece:response", this.onRotateResponse.bind(this));
         // On player info (information about the player)
         this._socket.on("player-info", this.onPlayerInfo.bind(this));
         // allow to start the game when the 'enter' key is pressed
@@ -184,6 +186,7 @@ class Game {
         // add an event listener on the canvas
         this._canvas.addEventListener("click", this.onClick.bind(this));
         this._canvas.addEventListener("mousemove", this.saveMousePos.bind(this));
+        this._canvas.addEventListener("wheel", this.onWheel.bind(this));
         this.resize();
     }
 
@@ -219,6 +222,15 @@ class Game {
 
     createRoom(roomName) {
         this._socket.emit("create-room", { roomName: roomName });
+    }
+
+    onRotateResponse(data) {
+        if (data.error) {
+            Notifications.error(data.error);
+            return;
+        }
+        // get the rotated piece
+        this._pieceList._selectedPiece = data.piece;
     }
 
     onPlayerInfo(info) {
@@ -284,7 +296,7 @@ class Game {
         // Search for the player in the list, and send a notification if it's his turn
         playerList.forEach((player) => {
             if (player.id == this._player.id && player.playTurn)
-                Notifications.info("It's your turn to play !");
+                Notifications.info("It's your turn to play !", 1500);
         });
     }
 
@@ -317,7 +329,7 @@ class Game {
             this._pieceList._selectedPiece = null;
         }
         else if (response.error) {
-            Notifications.error(response.error);
+            Notifications.error(response.error, 1500);
         }
     }
 
@@ -373,7 +385,11 @@ class Game {
 
         if (!piece)
             return;
-        var mousePosModified = { x: this._mousePos.x - this._map._gridSize.width / 2, y: this._mousePos.y - this._map._gridSize.height / 2 };
+        // find the part of the piece that is the closer to the top left corner
+        var mousePosModified = {
+            x: this._mousePos.x - (piece._topLeftCorner.x * this._map._gridSize.width),
+            y: this._mousePos.y - (piece._topLeftCorner.y * this._map._gridSize.height)
+        };
         // render the piece 
         this._pieceList.renderPiece(piece, mousePosModified, this._map._gridSize);
     }
@@ -426,6 +442,22 @@ class Game {
         return (this.isPointInRect(click, this._pieceListMenuRect));
     }
 
+    onWheel(event) {
+        if (!this._pieceList._selectedPiece)
+            return;
+        const pieceId = this._pieceList._selectedPiece._id;
+        if (event.deltaY > 0) {
+            this._socket.emit("rotate-piece", {
+                pieceId: pieceId, orientation: 1
+            });
+        }
+        else {
+            this._socket.emit("rotate-piece", {
+                pieceId: pieceId, orientation: -1
+            });
+        }
+    }
+
     onClick(event) {
         const click = { x: event.clientX, y: event.clientY };
 
@@ -442,10 +474,15 @@ class Game {
             return this._startBtn.onClick(click);
 
         if (this.isClickOnBoard(click) && this._pieceList._selectedPiece) {
-            const clickRelativeToBoard = { x: click.x - this._boardSizeRect.x, y: click.y - this._boardSizeRect.y };
+            var piece = this._pieceList._selectedPiece;
+            const clickRelativeToBoard = {
+                x: click.x - this._boardSizeRect.x - (piece._topLeftCorner.x * this._map._gridSize.width),
+                y: click.y - this._boardSizeRect.y - (piece._topLeftCorner.y * this._map._gridSize.height)
+            };
             // if the place was correctly placed, delete the piece
+            console.log(this._pieceList._selectedPiece._id);
             this._socket.emit("place-piece", {
-                piece: this._pieceList._selectedPiece,
+                pieceId: this._pieceList._selectedPiece._id,
                 position: { x: Math.floor(clickRelativeToBoard.x / this._map._gridSize.width), y: Math.floor(clickRelativeToBoard.y / this._map._gridSize.height) }
             });
         }

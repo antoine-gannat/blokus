@@ -26,6 +26,10 @@ class PieceFactory {
         pieces.push(this.createSquare());
         pieces.push(this.createWeirdT());
         pieces.push(this.createZ());
+        // Set pieces ids
+        pieces.map((piece, index) => {
+            piece._id = index;
+        })
         return (pieces);
     }
 

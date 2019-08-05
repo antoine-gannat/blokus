@@ -20,7 +20,9 @@ class PieceList {
     getBlockSize() {
         var size = 25;
 
+        // while the size is too big for the list
         while (!this.doesAllPiecesFit(size)) {
+            // redurce the size
             size--;
         }
         this._pieceBlockSize = {
@@ -49,7 +51,7 @@ class PieceList {
         }
         var selectPieceIndex = -1;
         g_game._player.pieces.map((piece, index) => {
-            if (g_game.isPointInRect(click, piece.drawingPos)) {
+            if (piece.drawingPos && g_game.isPointInRect(click, piece.drawingPos)) {
                 this._selectedPiece = piece;
                 selectPieceIndex = index;
             }

@@ -73,20 +73,26 @@ module.exports = (player, server) => {
             return;
         }
         // Check for missing parameters
-        if (!data || !data.position || !data.piece) {
+        if (!data || !data.position || data.pieceId == undefined) {
             socket.emit("place-piece:response", { error: "Missing parameters" });
             return;
         }
         var room = player._room;
         const position = data.position;
-        const piece = data.piece;
+        const pieceId = data.pieceId;
 
         // Check if it's this player turn
         if (!room.isPlayerTurn(player)) {
             socket.emit("place-piece:response", { error: "It's not your turn to play, please wait" });
             return;
         }
-        console.log("tring to place piece at pos " + position.x + " " + position.y);
+        // Serach for the piece
+        const piece = player._pieces.find((piece) => { return (piece._id == pieceId); });
+        if (!piece) {
+            socket.emit("place-piece:response", { error: "This piece is not in your inventory" });
+            return;
+        }
+        console.log("tring to place piece(" + pieceId + ") at pos " + position.x + " " + position.y);
         if (!room.placePiece(piece, position, player._color)) {
             socket.emit("place-piece:response", { error: "You can't place this piece here" });
             return;
@@ -99,6 +105,31 @@ module.exports = (player, server) => {
         room.broadcastMap();
         // Send the players infos
         room.broadcastPlayerList();
+    });
+
+    socket.on("rotate-piece", (data) => {
+        // Check if player is logged in
+        if (!player._username || !player._room) {
+            socket.emit("rotate-piece:response", { error: "Not connected or not in a room" });
+            return;
+        }
+        // Check for missing parameters
+        if (!data || !data.pieceId || data.orientation == undefined) {
+            socket.emit("rotate-piece:response", { error: "Missing parameters" });
+            return;
+        }
+        // Serach for the piece
+        const piece = player._pieces.find((piece) => { return (piece._id == data.pieceId); });
+        if (!piece) {
+            socket.emit("rotate-piece:response", { error: "This piece is not in your inventory" });
+            return;
+        }
+        if (data.orientation > 0)
+            piece.rotate90();
+        else
+            piece.rotateNeg90();
+        // Send the piece back with a success message
+        socket.emit("rotate-piece:response", { success: "Piece rotated", piece: piece });
     });
 
     socket.on("list-rooms", () => {

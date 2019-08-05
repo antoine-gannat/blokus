@@ -19,10 +19,3 @@ const COLORS = {
     YELLOW: "yellow",
     EMPTY: "empty"
 }
-
-const ORIENTATIONS = {
-    UP: "Up",
-    DOWN: "Down",
-    LEFT: "Left",
-    RIGHT: "Right"
-}

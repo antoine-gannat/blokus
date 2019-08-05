@@ -18,7 +18,8 @@ class Notifications {
             type: type,
             progressBar: true,
             timeout: duration,
-            theme: 'bootstrap-v4'
+            theme: 'bootstrap-v4',
+            layout: "topLeft"
         }).show();
     }
 }
