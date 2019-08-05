@@ -2,19 +2,39 @@ class PieceList {
     constructor(positionRect) {
         this.resize(positionRect);
         this._selectedPiece = null;
+        this._blockMargin = 1;
+    }
+
+    // test if all the pieces will fit with this block size
+    doesAllPiecesFit(testedSize) {
+        // multiply the margin by 2 because there is a margin on each side of the piece
+        const pieceWidth = (SHAPE_MAX_SIZE + (2 * this._blockMargin));
+        const nbBlocksToPlace = NB_OF_PIECES * (pieceWidth * pieceWidth);
+        const availableBlocks = (this._positionRect.width / testedSize) * (this._positionRect.height / testedSize);
+
+        if (availableBlocks < nbBlocksToPlace)
+            return (false);
+        return (true);
+    }
+
+    getBlockSize() {
+        var size = 25;
+
+        while (!this.doesAllPiecesFit(size)) {
+            size--;
+        }
+        this._pieceBlockSize = {
+            width: size,
+            height: size
+        };
     }
 
     resize(positionRect) {
         this._positionRect = positionRect;
         // Calculate the size of a block of a piece
-        const nbBlocks = NB_OF_PIECES * SHAPE_MAX_SIZE;
-        const biggestSide = (this._positionRect.width > this._positionRect.height ? this._positionRect.width : this._positionRect.height);
-        this._pieceBlockSize = {
-            width: (biggestSide / nbBlocks) * 1.5,
-            height: (biggestSide / nbBlocks) * 1.5
-        };
+        this.getBlockSize();
         // Margin between each piece
-        this._piecesMargin = 20;
+        this._piecesMargin = this._blockMargin * this._pieceBlockSize.width;
         this._lineHeight = this._pieceBlockSize.height * (SHAPE_MAX_SIZE) + this._piecesMargin;
     }
 
@@ -67,9 +87,13 @@ class PieceList {
             // render this piece
             this.renderPiece(piece, drawingPos);
             // save the drawing pos of the piece
-            piece.drawingPos = { x: drawingPos.x, y: drawingPos.y, width: piece._size.width * this._pieceBlockSize.width, height: piece._size.height * this._pieceBlockSize.height };
+            piece.drawingPos = {
+                x: drawingPos.x, y: drawingPos.y,
+                width: piece._size.width * this._pieceBlockSize.width + this._piecesMargin,
+                height: piece._size.height * this._pieceBlockSize.height + this._piecesMargin
+            };
             // change the drawing position to the next one
-            drawingPos.x += ((piece._size.width + 1) * this._pieceBlockSize.width) + this._piecesMargin;
+            drawingPos.x += (SHAPE_MAX_SIZE * this._pieceBlockSize.width) + this._piecesMargin;
             // if the x position is outside of the canvas
             if (drawingPos.x + this._pieceBlockSize.width + this._piecesMargin > this._positionRect.x + this._positionRect.width) {
                 // reset x to the begining

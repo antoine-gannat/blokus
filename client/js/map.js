@@ -4,13 +4,21 @@ class Map {
         this._piecesOpacity = 0.7;
     }
 
-    setGridSize() {
+    resize(positionRect) {
+        this._positionRect = positionRect;
         // Calculate the grid size
-        this._gridSize = { width: g_game._boardSizeRect.width / BOARD_SIZE, height: g_game._boardSizeRect.height / BOARD_SIZE };
+        this._gridSize = { width: positionRect.height / BOARD_SIZE, height: positionRect.height / BOARD_SIZE };
+
+        // change the grid width and height based on the grid size
+        this._positionRect.width = this._gridSize.width * BOARD_SIZE;
+        this._positionRect.height = this._gridSize.height * BOARD_SIZE;
     }
 
     render() {
-        const boardRect = g_game._boardSizeRect;
+        const boardRect = this._positionRect;
+        g_game._ctx.fillStyle = "#F5F5F5";
+        // Set a background color for the board
+        g_game._ctx.fillRect(this._positionRect.x, this._positionRect.y, this._gridSize.width * BOARD_SIZE, this._gridSize.height * BOARD_SIZE);
         g_game._ctx.globalAlpha = 0.5;
         g_game._ctx.lineWidth = 1;
         // Render the grid

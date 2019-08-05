@@ -5,7 +5,8 @@ class Game {
         // The player
         this._player = null;
         // UI elements
-        this._uis = [];
+        this._quitBtn = null;
+        this._startBtn = null;
         // Set the sizes according to the screen size
         this.resize();
         // Connect to the server
@@ -68,15 +69,17 @@ class Game {
         // Resize for small screens
         if (this.isSmallScreen()) {
             const bottomMenuHeightPercentage = 20;
-            const playerListWidthPercentage = 10;
+            const playerListWidthPercentage = 20;
             const bottomMenuHeight = (bottomMenuHeightPercentage * window.innerHeight) / 100;
             // Set the size of the board (full width on small screens)
             this._boardSizeRect = {
-                width: window.innerHeight,
+                width: window.innerHeight - bottomMenuHeight,
                 height: window.innerHeight - bottomMenuHeight,
-                x: 0,
+                x: (window.innerWidth / 2) - (window.innerHeight - bottomMenuHeight) / 2,
                 y: 0
             };
+            if (this._boardSizeRect.x < 0)
+                this._boardSizeRect.x = 0;
             // Set the size of the player list
             this._playerListMenuRect = {
                 width: (playerListWidthPercentage * window.innerWidth) / 100,
@@ -91,6 +94,23 @@ class Game {
                 x: this._playerListMenuRect.width,
                 y: this._boardSizeRect.height
             }
+            // Resize the buttons
+            if (this._quitBtn)
+                this._quitBtn.resize({
+                    x: this._playerListMenuRect.x,
+                    y: this._playerListMenuRect.y + this._playerListMenuRect.height - 30,
+                    width: this._playerListMenuRect.width,
+                    height: 25
+                });
+            if (this._startBtn) {
+                this._startBtn.resize({
+                    x: this._playerListMenuRect.x,
+                    y: this._playerListMenuRect.y + this._playerListMenuRect.height - 60,
+                    width: this._playerListMenuRect.width,
+                    height: 25
+                });
+            }
+
         }
         // Big screens
         else {
@@ -117,20 +137,35 @@ class Game {
             this._boardSizeRect = {
                 width: boardSize,
                 height: boardSize,
-                x: this._playerListMenuRect.width,
+                x: (window.innerWidth / 2) - (boardSize / 2),
                 y: 0
             };
             // Set the x position of the piece menu based on the board and player list position 
-            this._pieceListMenuRect.x = this._playerListMenuRect.width + this._boardSizeRect.width + 50;
+            this._pieceListMenuRect.x = window.innerWidth - this._pieceListMenuRect.width;
+
+            // Resize the buttons
+            if (this._quitBtn)
+                this._quitBtn.resize({
+                    x: this._playerListMenuRect.x,
+                    y: this._playerListMenuRect.y + this._playerListMenuRect.height - 60,
+                    width: this._playerListMenuRect.width,
+                    height: 50
+                });
+            if (this._startBtn) {
+                this._startBtn.resize({
+                    x: this._playerListMenuRect.x,
+                    y: this._playerListMenuRect.y + this._playerListMenuRect.height - 120,
+                    width: this._playerListMenuRect.width,
+                    height: 50
+                });
+            }
         }
-        var startGameBtn = this._uis.find((ui) => { return (ui._text == "Start game"); });
-        var quitBtn = this._uis.find((ui) => { return (ui._text == "Quit"); });
         if (this._pieceList)
             this._pieceList.resize(this._pieceListMenuRect);
         if (this._playerList)
             this._playerList.resize(this._playerListMenuRect);
-        if (this._map && g_game)
-            this._map.setGridSize();
+        if (this._map)
+            this._map.resize(this._boardSizeRect);
         if (!this._ctx)
             return;
         this._ctx.canvas.width = window.innerWidth;
@@ -159,12 +194,12 @@ class Game {
         loginMenu.parentNode.removeChild(loginMenu);
 
         this.initCanvas();
-        this._uis.push(new UiButton({
+        this._quitBtn = new UiButton({
             x: this._playerListMenuRect.x,
-            y: this._playerListMenuRect.y + this._playerListMenuRect.height - 60,
+            y: this._playerListMenuRect.y + this._playerListMenuRect.height - (this.isSmallScreen() ? 30 : 60),
             width: this._playerListMenuRect.width,
-            height: 50
-        }, "red", "white", "Quit", () => { window.location.reload(); }));
+            height: (this.isSmallScreen() ? 25 : 50)
+        }, "#dc3545", "white", "Quit", () => { window.location.reload(); });
     }
 
     login(username) {
@@ -190,12 +225,12 @@ class Game {
         this._player = info;
         // add a start game btn if admin
         if (this._player.admin) {
-            this._uis.push(new UiButton({
+            this._startBtn = new UiButton({
                 x: this._playerListMenuRect.x,
-                y: this._playerListMenuRect.y + this._playerListMenuRect.height - 120,
+                y: this._playerListMenuRect.y + this._playerListMenuRect.height - 60,
                 width: this._playerListMenuRect.width,
-                height: 50
-            }, "green", "white", "Start game", this.startGame.bind(this)));
+                height: 25
+            }, "#007bff", "white", "Start game", this.startGame.bind(this));
         }
     }
 
@@ -205,9 +240,8 @@ class Game {
             return;
         }
         // hide the start button
-        var startGameBtn = this._uis.find((ui) => { return (ui._text == "Start game"); });
-        if (startGameBtn)
-            startGameBtn.changeVisibility();
+        if (this._startBtn)
+            this._startBtn = null;
     }
 
     onJoinRoomResponse(data) {
@@ -275,7 +309,7 @@ class Game {
 
     onMapReceived(map) {
         this._map = new Map(map);
-        this._map.setGridSize();
+        this._map.resize(this._boardSizeRect);
     }
 
     onPiecePlaced(response) {
@@ -300,7 +334,7 @@ class Game {
         // init the canvas
         this.init();
         // setGridSize of the map
-        this._map.setGridSize();
+        this._map.resize(this._boardSizeRect);
         // infinite loop that will loop at 60fps
         while (true) {
             // get the frame start time
@@ -320,9 +354,6 @@ class Game {
 
     tick() {
         this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-        this._ctx.fillStyle = "#F5F5F5";
-        // Set a background color for the board
-        this._ctx.fillRect(this._boardSizeRect.x, this._boardSizeRect.y, this._boardSizeRect.width, this._boardSizeRect.height);
         // don't render the board or the PieceList until the player is connected
         if (!this._player)
             return;
@@ -330,10 +361,11 @@ class Game {
         this._playerList.render();
         this._pieceList.render();
         this.renderSelectedPiece();
-        // Render the ui
-        this._uis.forEach((ui) => {
-            ui.render();
-        })
+
+        if (this._startBtn)
+            this._startBtn.render();
+        if (this._quitBtn)
+            this._quitBtn.render();
     }
 
     renderSelectedPiece() {
@@ -348,10 +380,36 @@ class Game {
 
     // clicks
 
+    setPointerCursor() {
+        g_game._canvas.style.cursor = "pointer";
+    }
+
+    setDefaultCursor() {
+        g_game._canvas.style.cursor = "auto";
+    }
+
     saveMousePos(event) {
         const click = { x: event.clientX, y: event.clientY };
         this._mousePos.x = click.x;
         this._mousePos.y = click.y;
+        if (this._quitBtn) {
+            var hovered = this.isPointInRect(click, this._quitBtn._positionRect);
+            // if the button is no more hovered
+            if (this._quitBtn._hovered && !hovered)
+                this._quitBtn.onHoverOut(click);
+            // if the button is hovered
+            else if (hovered)
+                this._quitBtn.onHover(click);
+        }
+        if (this._startBtn) {
+            var hovered = this.isPointInRect(click, this._startBtn._positionRect);
+            // if the button is no more hovered
+            if (this._startBtn._hovered && !hovered)
+                this._startBtn.onHoverOut(click);
+            // if the button is hovered
+            else if (hovered)
+                this._startBtn.onHover(click);
+        }
     }
 
     // return true if the point is in the rectangle
@@ -371,17 +429,18 @@ class Game {
     onClick(event) {
         const click = { x: event.clientX, y: event.clientY };
 
-        //        Notifications.info("click y: " + click.x + " y: " + click.y);
         // If the position are negative, set to 0
         if (click.x < 0)
             click.x = 0;
         if (click.y < 0)
             click.y = 0;
 
-        this._uis.forEach((ui) => {
-            if (this.isPointInRect(click, ui._positionRect))
-                ui.onClick(click);
-        });
+        // if the click is on a button
+        if (this._quitBtn && this.isPointInRect(click, this._quitBtn._positionRect))
+            return this._quitBtn.onClick(click);
+        if (this._startBtn && this.isPointInRect(click, this._startBtn._positionRect))
+            return this._startBtn.onClick(click);
+
         if (this.isClickOnBoard(click) && this._pieceList._selectedPiece) {
             const clickRelativeToBoard = { x: click.x - this._boardSizeRect.x, y: click.y - this._boardSizeRect.y };
             // if the place was correctly placed, delete the piece
