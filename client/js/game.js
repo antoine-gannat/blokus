@@ -196,6 +196,9 @@ class Game {
         var loginMenu = document.getElementById("login-container");
         loginMenu.parentNode.removeChild(loginMenu);
 
+        // hide the overflow
+        document.body.style.overflow = "hidden";
+
         this.initCanvas();
         this._quitBtn = new UiButton({
             x: this._playerListMenuRect.x,
