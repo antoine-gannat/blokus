@@ -97,7 +97,7 @@ class PieceList {
             // change the drawing position to the next one
             drawingPos.x += (SHAPE_MAX_SIZE * this._pieceBlockSize.width) + this._piecesMargin;
             // if the x position is outside of the canvas
-            if (drawingPos.x + this._pieceBlockSize.width + this._piecesMargin > this._positionRect.x + this._positionRect.width) {
+            if (drawingPos.x + (SHAPE_MAX_SIZE * this._pieceBlockSize.width) + this._piecesMargin >= this._positionRect.x + this._positionRect.width) {
                 // reset x to the begining
                 drawingPos.x = beginXPos;
                 // increase y position

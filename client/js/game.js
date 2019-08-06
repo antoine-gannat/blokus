@@ -1,5 +1,9 @@
 class Game {
     constructor() {
+        // init rects
+        this._pieceListMenuRect = { x: 0, y: 0, height: 0, width: 0 };
+        this._playerListMenuRect = { x: 0, y: 0, height: 0, width: 0 };
+        this._boardSizeRect = { x: 0, y: 0, height: 0, width: 0 };
         // generate the map
         this._map = new Map();
         // The player
@@ -68,30 +72,42 @@ class Game {
     }
 
     resize() {
+        if (!this._ctx)
+            return;
+        const leftMarginPercentage = 5;
+        const topMarginPercentage = 10;
+        this._ctx.canvas.width = window.innerWidth - ((leftMarginPercentage * window.innerWidth) / 100);
+        this._canvas.style.marginLeft = (((leftMarginPercentage * window.innerWidth) / 100) / 2) + "px";
+        this._canvas.style.marginTop = (((topMarginPercentage * window.innerHeight) / 100) / 2) + "px";
+        this._ctx.canvas.height = window.innerHeight - ((topMarginPercentage * window.innerHeight) / 100);
         // Resize for small screens
         if (this.isSmallScreen()) {
             const bottomMenuHeightPercentage = 20;
             const playerListWidthPercentage = 20;
-            const bottomMenuHeight = (bottomMenuHeightPercentage * window.innerHeight) / 100;
+            const bottomMenuHeight = (bottomMenuHeightPercentage * this._ctx.canvas.height) / 100;
             // Set the size of the board (full width on small screens)
             this._boardSizeRect = {
-                width: window.innerHeight - bottomMenuHeight,
-                height: window.innerHeight - bottomMenuHeight,
-                x: (window.innerWidth / 2) - (window.innerHeight - bottomMenuHeight) / 2,
+                width: this._ctx.canvas.height - bottomMenuHeight,
+                height: this._ctx.canvas.height - bottomMenuHeight,
+                x: (this._ctx.canvas.width / 2) - (this._ctx.canvas.height - bottomMenuHeight) / 2,
                 y: 0
             };
             if (this._boardSizeRect.x < 0)
                 this._boardSizeRect.x = 0;
+            if (this._boardSizeRect.x + this._boardSizeRect.width >= this._ctx.canvas.width) {
+                this._boardSizeRect.width = this._ctx.canvas.width;
+                this._boardSizeRect.height = this._ctx.canvas.width;
+            }
             // Set the size of the player list
             this._playerListMenuRect = {
-                width: (playerListWidthPercentage * window.innerWidth) / 100,
+                width: (playerListWidthPercentage * this._ctx.canvas.width) / 100,
                 height: bottomMenuHeight,
                 x: 0,
                 y: this._boardSizeRect.height
             };
             // Set the size of the piece list
             this._pieceListMenuRect = {
-                width: window.innerWidth - this._playerListMenuRect.width,
+                width: this._ctx.canvas.width - this._playerListMenuRect.width,
                 height: bottomMenuHeight,
                 x: this._playerListMenuRect.width,
                 y: this._boardSizeRect.height
@@ -120,31 +136,33 @@ class Game {
             const pieceListWidthPercentage = 20;
             // Set the size of the player list
             this._playerListMenuRect = {
-                width: (playerListWidthPercentage * window.innerWidth) / 100,
-                height: window.innerHeight,
+                width: (playerListWidthPercentage * this._ctx.canvas.width) / 100,
+                height: this._ctx.canvas.height,
                 x: 0,
                 y: 0
             };
             // Set the size of the piece list
             this._pieceListMenuRect = {
-                width: (pieceListWidthPercentage * window.innerWidth) / 100,
-                height: window.innerHeight,
+                width: (pieceListWidthPercentage * this._ctx.canvas.width) / 100,
+                height: this._ctx.canvas.height,
                 x: 0,
                 y: 0
             }
             // Set the size of the board
-            var boardSize = window.innerWidth - this._playerListMenuRect.width - this._pieceListMenuRect.width;
-            if (boardSize > window.innerHeight)
-                boardSize = window.innerHeight;
+            var boardSize = this._ctx.canvas.width - this._playerListMenuRect.width - this._pieceListMenuRect.width;
+            if (boardSize > this._ctx.canvas.height)
+                boardSize = this._ctx.canvas.height;
             this._boardSizeRect = {
                 width: boardSize,
                 height: boardSize,
-                x: (window.innerWidth / 2) - (boardSize / 2),
+                x: (this._ctx.canvas.width / 2) - (boardSize / 2),
                 y: 0
             };
             // Set the x position of the piece menu based on the board and player list position 
-            this._pieceListMenuRect.x = window.innerWidth - this._pieceListMenuRect.width;
-
+            this._pieceListMenuRect.x = this._ctx.canvas.width - this._pieceListMenuRect.width;
+            if (this._pieceListMenuRect.x < this._boardSizeRect.x + this._boardSizeRect.width) {
+                this._pieceListMenuRect.x = this._boardSizeRect.x + this._boardSizeRect.width;
+            }
             // Resize the buttons
             if (this._quitBtn)
                 this._quitBtn.resize({
@@ -168,10 +186,6 @@ class Game {
             this._playerList.resize(this._playerListMenuRect);
         if (this._map)
             this._map.resize(this._boardSizeRect);
-        if (!this._ctx)
-            return;
-        this._ctx.canvas.width = window.innerWidth;
-        this._ctx.canvas.height = window.innerHeight;
     }
 
     // init the canvas
@@ -408,7 +422,7 @@ class Game {
     }
 
     saveMousePos(event) {
-        const click = { x: event.clientX, y: event.clientY };
+        const click = this.getClickPosRelativeToCanvas(event);
         this._mousePos.x = click.x;
         this._mousePos.y = click.y;
         if (this._quitBtn) {
@@ -461,8 +475,12 @@ class Game {
         }
     }
 
+    getClickPosRelativeToCanvas(event) {
+        return ({ x: event.clientX - parseInt(this._canvas.style.marginLeft), y: event.clientY - parseInt(this._canvas.style.marginTop) });
+    }
+
     onClick(event) {
-        const click = { x: event.clientX, y: event.clientY };
+        const click = this.getClickPosRelativeToCanvas(event);
 
         // If the position are negative, set to 0
         if (click.x < 0)
@@ -483,7 +501,6 @@ class Game {
                 y: click.y - this._boardSizeRect.y - (piece._topLeftCorner.y * this._map._gridSize.height)
             };
             // if the place was correctly placed, delete the piece
-            console.log(this._pieceList._selectedPiece._id);
             this._socket.emit("place-piece", {
                 pieceId: this._pieceList._selectedPiece._id,
                 position: { x: Math.floor(clickRelativeToBoard.x / this._map._gridSize.width), y: Math.floor(clickRelativeToBoard.y / this._map._gridSize.height) }
