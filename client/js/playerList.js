@@ -2,10 +2,15 @@ class PlayerList {
     constructor(positionRect) {
         this._positionRect = positionRect;
         this._playerList = [];
+        this._fontSize = 20;
     }
 
     setPlayerList(playerList) {
         this._playerList = playerList;
+    }
+
+    changeFontSize(newSize) {
+        this._fontSize = newSize;
     }
 
     resize(newPos) {
@@ -13,10 +18,10 @@ class PlayerList {
     }
 
     render() {
-        const lineSize = 20;
+        const lineSize = this._fontSize;
         const startingY = 50;
         const startingX = 10;
-        g_game._ctx.font = "20px Arial";
+        g_game._ctx.font = this._fontSize + "px Arial";
         g_game._ctx.fillStyle = "black";
         g_game._ctx.fillText("Players :", this._positionRect.x + this._positionRect.width / 4, this._positionRect.y + lineSize);
         this._playerList.map((player, index) => {
@@ -37,7 +42,11 @@ class PlayerList {
                     g_game._ctx.fillStyle = "black";
                     break;
             }
-            g_game._ctx.fillText("- " + player.username, this._positionRect.x + startingX, this._positionRect.y + startingY + (index) * (lineSize + 2));
+            // display a little arrow if it's the player's turn
+            if (player.playTurn)
+                g_game._ctx.fillText("- " + player.username + " <-", this._positionRect.x + startingX, this._positionRect.y + startingY + (index) * (lineSize + 2));
+            else
+                g_game._ctx.fillText("- " + player.username, this._positionRect.x + startingX, this._positionRect.y + startingY + (index) * (lineSize + 2));
         });
     }
 }

@@ -45,22 +45,7 @@ class Map {
             for (var col = 0; col < BOARD_SIZE; col++) {
                 if (this._map[row][col] == COLORS.EMPTY)
                     continue;
-                switch (this._map[row][col]) {
-                    case COLORS.RED:
-                        g_game._ctx.fillStyle = "red";
-                        break;
-                    case COLORS.GREEN:
-                        g_game._ctx.fillStyle = "#65A752";
-                        break;
-                    case COLORS.YELLOW:
-                        g_game._ctx.fillStyle = "#E3BF47";
-                        break;
-                    case COLORS.BLUE:
-                        g_game._ctx.fillStyle = "blue";
-                        break;
-                    default:
-                        break;
-                }
+                g_game._ctx.fillStyle = this._map[row][col];
                 g_game._ctx.globalAlpha = this._piecesOpacity;
                 g_game._ctx.fillRect(boardRect.x + col * this._gridSize.width, boardRect.y + row * this._gridSize.height, this._gridSize.width, this._gridSize.height);
                 g_game._ctx.globalAlpha = 1;

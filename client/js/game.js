@@ -30,7 +30,7 @@ class Game {
         // On map received
         this._socket.on("place-piece:response", this.onPiecePlaced.bind(this));
         // On rooms received
-        this._socket.on("list-rooms:response", this.onListRooms.bind(this));
+        this._socket.on("list-rooms", this.onListRooms.bind(this));
         // On join rooms response
         this._socket.on("join-room:response", this.onJoinRoomResponse.bind(this));
         // On create rooms response
@@ -59,7 +59,6 @@ class Game {
 
         // Last known position of the mouse
         this._mousePos = { x: 0, y: 0 };
-        this._socket.emit("list-rooms");
     }
 
     // screen size adaptation //
@@ -112,6 +111,7 @@ class Game {
                 x: this._playerListMenuRect.width,
                 y: this._boardSizeRect.height
             }
+            this._playerList.changeFontSize(12);
             // Resize the buttons
             if (this._quitBtn)
                 this._quitBtn.resize({
@@ -132,6 +132,7 @@ class Game {
         }
         // Big screens
         else {
+            this._playerList.changeFontSize(20);
             const playerListWidthPercentage = 10;
             const pieceListWidthPercentage = 20;
             // Set the size of the player list
@@ -225,8 +226,6 @@ class Game {
     login(username) {
         // authenticate
         this._socket.emit("login", { username: username });
-        // ask for a list of room
-        this._socket.emit("list-rooms");
     }
 
     startGame() {
@@ -293,6 +292,8 @@ class Game {
     // on list room
     onListRooms(rooms) {
         var roomTable = document.getElementById("room-table");
+        if (!roomTable)
+            return;
         if (rooms.length == 0) {
             roomTable.innerHTML = "<p>No room found. Create a new one</p>";
             return;

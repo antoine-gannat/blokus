@@ -33,6 +33,15 @@ class Server {
         });
     }
 
+    broadcastRooms() {
+        var rooms = [];
+        this._rooms.forEach((room) => {
+            if (!room._started)
+                rooms.push(room.getPublicInfo());
+        });
+        io.sockets.emit("list-rooms", rooms);
+    }
+
     // delete a room
     removeRoom(roomId) {
         // search the room

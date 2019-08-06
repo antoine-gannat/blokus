@@ -46,6 +46,7 @@ module.exports = (player, server) => {
         room.addPlayer(player);
         // Success
         socket.emit("join-room:response", { success: "Room joined" });
+        server.broadcastRooms();
     });
 
     socket.on("create-room", (data) => {
@@ -64,6 +65,7 @@ module.exports = (player, server) => {
         server._rooms.push(newRoom);
         // success
         socket.emit("create-room:response", { success: "Room created" });
+        server.broadcastRooms();
     });
 
     socket.on("place-piece", (data) => {
@@ -132,15 +134,6 @@ module.exports = (player, server) => {
         socket.emit("rotate-piece:response", { success: "Piece rotated", piece: piece });
     });
 
-    socket.on("list-rooms", () => {
-        var roomsInfo = [];
-        server._rooms.forEach((room) => {
-            if (!room._started)
-                roomsInfo.push(room.getPublicInfo());
-        });
-        socket.emit("list-rooms:response", roomsInfo);
-    });
-
     socket.on("start-game", () => {
         // Check if the player is in a room
         if (!player._room) {
@@ -155,5 +148,6 @@ module.exports = (player, server) => {
         // start the game in the room
         player._room.start();
         socket.emit("start-game:response", { success: "Game started." })
+        server.broadcastRooms();
     });
 }
