@@ -195,6 +195,7 @@ class Game {
         // delete the login menu
         var loginMenu = document.getElementById("login-container");
         loginMenu.parentNode.removeChild(loginMenu);
+        document.body.style.overflow = "hidden";
 
         this.initCanvas();
         this._quitBtn = new UiButton({
