@@ -249,6 +249,8 @@ class Room {
                 console.log("Deleting room: " + this._name);
                 this._server.removeRoom(this._id);
             }
+            // resend the player list
+            this.broadcastPlayerList();
         }
     }
 

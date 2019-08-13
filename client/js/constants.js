@@ -13,7 +13,7 @@ const SERVER_URL = "http://localhost";
 const COLORS = {
     BLUE: "blue",
     RED: "red",
-    GREEN: "green",
-    YELLOW: "yellow",
+    GREEN: "#65A752",
+    YELLOW: "#F2E55E",
     EMPTY: "empty"
 }

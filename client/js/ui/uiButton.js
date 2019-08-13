@@ -22,6 +22,7 @@ class UiButton {
     }
 
     onClick(click) {
+        g_game.setDefaultCursor();
         this._callback();
     }
 
