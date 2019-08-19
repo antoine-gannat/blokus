@@ -50,7 +50,7 @@ class Piece {
         this.calculateTopLeftCorner();
     }
 
-    flipHorizontal() {
+    flip() {
         var newShape = [
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],

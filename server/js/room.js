@@ -227,7 +227,6 @@ class Room {
         // Get the player index in the player list
         var thisPlayerIndex = this._players.findIndex((p) => { return (p._id == player._id); });
 
-        console.log(thisPlayerIndex);
         // If this player index is not the one that should be playing
         if (thisPlayerIndex != this._playerTurnIndex)
             return (false);

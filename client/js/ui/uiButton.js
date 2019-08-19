@@ -1,24 +1,30 @@
 class UiButton {
-    constructor(positionRect, backgroundColor, textColor, text, callback) {
+    constructor(positionRect, backgroundColor, textColor, text, resizeCallback, callback) {
         this._positionRect = positionRect;
         this._backgroundColor = backgroundColor;
         this._textColor = textColor;
         this._callback = callback;
+        this._resizeCallback = resizeCallback;
         this._text = text;
         this._hide = false;
         this._hovered = false;
-        this.resize(this._positionRect);
+        this.onResize();
     }
 
     changeVisibility() {
         this._hide = !this._hide;
     }
 
-    resize(positionRect) {
-        this._positionRect = positionRect;
+    resize() {
         this._fontSize = this._positionRect.width / this._text.length;
         if (this._fontSize > this._positionRect.height / 2)
             this._fontSize = this._positionRect.height / 2;
+    }
+
+    onResize() {
+        if (this._resizeCallback)
+            this._resizeCallback(this);
+        this.resize();
     }
 
     onClick(click) {

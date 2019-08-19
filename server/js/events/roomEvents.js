@@ -94,7 +94,6 @@ module.exports = (player, server) => {
             socket.emit("place-piece:response", { error: "This piece is not in your inventory" });
             return;
         }
-        console.log("tring to place piece(" + pieceId + ") at pos " + position.x + " " + position.y);
         if (!room.placePiece(piece, position, player._color)) {
             socket.emit("place-piece:response", { error: "You can't place this piece here" });
             return;
@@ -132,6 +131,28 @@ module.exports = (player, server) => {
             piece.rotateNeg90();
         // Send the piece back with a success message
         socket.emit("rotate-piece:response", { success: "Piece rotated", piece: piece });
+    });
+
+    socket.on("flip-piece", (data) => {
+        // Check if player is logged in
+        if (!player._username || !player._room) {
+            socket.emit("flip-piece:response", { error: "Not connected or not in a room" });
+            return;
+        }
+        // Check for missing parameters
+        if (!data || !data.pieceId) {
+            socket.emit("flip-piece:response", { error: "Missing parameters" });
+            return;
+        }
+        // Serach for the piece
+        const piece = player._pieces.find((piece) => { return (piece._id == data.pieceId); });
+        if (!piece) {
+            socket.emit("flip-piece:response", { error: "This piece is not in your inventory" });
+            return;
+        }
+        piece.flip();
+        // Send the piece back with a success message
+        socket.emit("flip-piece:response", { success: "Piece fliped", piece: piece });
     });
 
     socket.on("start-game", () => {

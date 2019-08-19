@@ -39,6 +39,7 @@ class Game {
         this._socket.on("start-game:response", this.onStartGameResponse.bind(this));
         // on rotate response
         this._socket.on("rotate-piece:response", this.onRotateResponse.bind(this));
+        this._socket.on("flip-piece:response", this.onFlipResponse.bind(this));
         // On player info (information about the player)
         this._socket.on("player-info", this.onPlayerInfo.bind(this));
         // allow to start the game when the 'enter' key is pressed
@@ -59,6 +60,10 @@ class Game {
 
         // Last known position of the mouse
         this._mousePos = { x: 0, y: 0 };
+
+        // size percentages 
+        this.btnWidthPercentage = 25;
+        this.btnMargin = 5;
     }
 
     // screen size adaptation //
@@ -70,116 +75,122 @@ class Game {
         return (false);
     }
 
+    smallScreenResize() {
+        const bottomMenuHeightPercentage = 20;
+        const playerListWidthPercentage = 20;
+        const startingY = 25;
+        const bottomMenuHeight = (bottomMenuHeightPercentage * this._ctx.canvas.height) / 100;
+        // Set the size of the board (full width on small screens)
+        this._boardSizeRect = {
+            width: this._ctx.canvas.height - bottomMenuHeight,
+            height: this._ctx.canvas.height - bottomMenuHeight,
+            x: (this._ctx.canvas.width / 2) - (this._ctx.canvas.height - bottomMenuHeight) / 2,
+            y: startingY
+        };
+        if (this._boardSizeRect.x < 0)
+            this._boardSizeRect.x = 0;
+        if (this._boardSizeRect.x + this._boardSizeRect.width >= this._ctx.canvas.width) {
+            this._boardSizeRect.width = this._ctx.canvas.width;
+            this._boardSizeRect.height = this._ctx.canvas.width;
+        }
+        // Set the size of the player list
+        this._playerListMenuRect = {
+            width: (playerListWidthPercentage * this._ctx.canvas.width) / 100,
+            height: bottomMenuHeight,
+            x: 0,
+            y: this._boardSizeRect.height + this._boardSizeRect.y
+        };
+        // Set the size of the piece list
+        this._pieceListMenuRect = {
+            width: this._ctx.canvas.width - this._playerListMenuRect.width,
+            height: bottomMenuHeight,
+            x: this._playerListMenuRect.width,
+            y: this._boardSizeRect.height + this._boardSizeRect.y
+        }
+        this._playerList.changeFontSize(12);
+        // Resize the buttons
+        if (this._quitBtn)
+            this._quitBtn.resize({
+                x: this._playerListMenuRect.x,
+                y: this._playerListMenuRect.y + this._playerListMenuRect.height - 30,
+                width: this._playerListMenuRect.width,
+                height: 25
+            });
+        if (this._startBtn) {
+            this._startBtn.resize({
+                x: this._playerListMenuRect.x,
+                y: this._playerListMenuRect.y + this._playerListMenuRect.height - 60,
+                width: this._playerListMenuRect.width,
+                height: 25
+            });
+        }
+    }
+
+    normalScreenResize() {
+        this._playerList.changeFontSize(20);
+        const playerListWidthPercentage = 10;
+        const pieceListWidthPercentage = 20;
+        const startingY = 50;
+        // Set the size of the player list
+        this._playerListMenuRect = {
+            width: (playerListWidthPercentage * this._ctx.canvas.width) / 100,
+            height: this._ctx.canvas.height,
+            x: 0,
+            y: startingY
+        };
+        // Set the size of the piece list
+        this._pieceListMenuRect = {
+            width: (pieceListWidthPercentage * this._ctx.canvas.width) / 100,
+            height: this._ctx.canvas.height,
+            x: 0,
+            y: startingY
+        }
+        // Set the size of the board
+        var boardSize = this._ctx.canvas.width - this._playerListMenuRect.width - this._pieceListMenuRect.width;
+        if (boardSize > this._ctx.canvas.height)
+            boardSize = this._ctx.canvas.height;
+        this._boardSizeRect = {
+            width: boardSize,
+            height: boardSize,
+            x: (this._ctx.canvas.width / 2) - (boardSize / 2),
+            y: startingY
+        };
+        // Set the x position of the piece menu based on the board and player list position 
+        this._pieceListMenuRect.x = this._ctx.canvas.width - this._pieceListMenuRect.width;
+        if (this._pieceListMenuRect.x < this._boardSizeRect.x + this._boardSizeRect.width) {
+            this._pieceListMenuRect.x = this._boardSizeRect.x + this._boardSizeRect.width;
+        }
+    }
+
+    resizeButtons() {
+        // call the resize callbacks of the buttons
+        if (this._quitBtn)
+            this._quitBtn.onResize();
+        if (this._startBtn)
+            this._startBtn.onResize();
+        if (this._flipBtn)
+            this._flipBtn.onResize();
+        if (this._rotateBtn)
+            this._rotateBtn.onResize();
+    }
+
     resize() {
         if (!this._ctx)
             return;
         const leftMarginPercentage = 5;
-        const topMarginPercentage = 10;
+        // set canvas's width
         this._ctx.canvas.width = window.innerWidth - ((leftMarginPercentage * window.innerWidth) / 100);
+        // set the margins of the canvas
         this._canvas.style.marginLeft = (((leftMarginPercentage * window.innerWidth) / 100) / 2) + "px";
-        this._canvas.style.marginTop = (((topMarginPercentage * window.innerHeight) / 100) / 2) + "px";
-        this._ctx.canvas.height = window.innerHeight - ((topMarginPercentage * window.innerHeight) / 100);
+        // set canvas's height
+        this._ctx.canvas.height = window.innerHeight;
         // Resize for small screens
         if (this.isSmallScreen()) {
-            const bottomMenuHeightPercentage = 20;
-            const playerListWidthPercentage = 20;
-            const bottomMenuHeight = (bottomMenuHeightPercentage * this._ctx.canvas.height) / 100;
-            // Set the size of the board (full width on small screens)
-            this._boardSizeRect = {
-                width: this._ctx.canvas.height - bottomMenuHeight,
-                height: this._ctx.canvas.height - bottomMenuHeight,
-                x: (this._ctx.canvas.width / 2) - (this._ctx.canvas.height - bottomMenuHeight) / 2,
-                y: 0
-            };
-            if (this._boardSizeRect.x < 0)
-                this._boardSizeRect.x = 0;
-            if (this._boardSizeRect.x + this._boardSizeRect.width >= this._ctx.canvas.width) {
-                this._boardSizeRect.width = this._ctx.canvas.width;
-                this._boardSizeRect.height = this._ctx.canvas.width;
-            }
-            // Set the size of the player list
-            this._playerListMenuRect = {
-                width: (playerListWidthPercentage * this._ctx.canvas.width) / 100,
-                height: bottomMenuHeight,
-                x: 0,
-                y: this._boardSizeRect.height
-            };
-            // Set the size of the piece list
-            this._pieceListMenuRect = {
-                width: this._ctx.canvas.width - this._playerListMenuRect.width,
-                height: bottomMenuHeight,
-                x: this._playerListMenuRect.width,
-                y: this._boardSizeRect.height
-            }
-            this._playerList.changeFontSize(12);
-            // Resize the buttons
-            if (this._quitBtn)
-                this._quitBtn.resize({
-                    x: this._playerListMenuRect.x,
-                    y: this._playerListMenuRect.y + this._playerListMenuRect.height - 30,
-                    width: this._playerListMenuRect.width,
-                    height: 25
-                });
-            if (this._startBtn) {
-                this._startBtn.resize({
-                    x: this._playerListMenuRect.x,
-                    y: this._playerListMenuRect.y + this._playerListMenuRect.height - 60,
-                    width: this._playerListMenuRect.width,
-                    height: 25
-                });
-            }
-
+            this.smallScreenResize();
         }
-        // Big screens
+        // resize for normal screens
         else {
-            this._playerList.changeFontSize(20);
-            const playerListWidthPercentage = 10;
-            const pieceListWidthPercentage = 20;
-            // Set the size of the player list
-            this._playerListMenuRect = {
-                width: (playerListWidthPercentage * this._ctx.canvas.width) / 100,
-                height: this._ctx.canvas.height,
-                x: 0,
-                y: 0
-            };
-            // Set the size of the piece list
-            this._pieceListMenuRect = {
-                width: (pieceListWidthPercentage * this._ctx.canvas.width) / 100,
-                height: this._ctx.canvas.height,
-                x: 0,
-                y: 0
-            }
-            // Set the size of the board
-            var boardSize = this._ctx.canvas.width - this._playerListMenuRect.width - this._pieceListMenuRect.width;
-            if (boardSize > this._ctx.canvas.height)
-                boardSize = this._ctx.canvas.height;
-            this._boardSizeRect = {
-                width: boardSize,
-                height: boardSize,
-                x: (this._ctx.canvas.width / 2) - (boardSize / 2),
-                y: 0
-            };
-            // Set the x position of the piece menu based on the board and player list position 
-            this._pieceListMenuRect.x = this._ctx.canvas.width - this._pieceListMenuRect.width;
-            if (this._pieceListMenuRect.x < this._boardSizeRect.x + this._boardSizeRect.width) {
-                this._pieceListMenuRect.x = this._boardSizeRect.x + this._boardSizeRect.width;
-            }
-            // Resize the buttons
-            if (this._quitBtn)
-                this._quitBtn.resize({
-                    x: this._playerListMenuRect.x,
-                    y: this._playerListMenuRect.y + this._playerListMenuRect.height - 60,
-                    width: this._playerListMenuRect.width,
-                    height: 50
-                });
-            if (this._startBtn) {
-                this._startBtn.resize({
-                    x: this._playerListMenuRect.x,
-                    y: this._playerListMenuRect.y + this._playerListMenuRect.height - 120,
-                    width: this._playerListMenuRect.width,
-                    height: 50
-                });
-            }
+            this.normalScreenResize();
         }
         if (this._pieceList)
             this._pieceList.resize(this._pieceListMenuRect);
@@ -187,7 +198,11 @@ class Game {
             this._playerList.resize(this._playerListMenuRect);
         if (this._map)
             this._map.resize(this._boardSizeRect);
+        // resize the buttons
+        this.resizeButtons();
     }
+
+    // init functions // 
 
     // init the canvas
     initCanvas() {
@@ -201,12 +216,13 @@ class Game {
         // add an event listener on the canvas
         this._canvas.addEventListener("click", this.onClick.bind(this));
         this._canvas.addEventListener("mousemove", this.saveMousePos.bind(this));
-        this._canvas.addEventListener("wheel", this.onWheel.bind(this));
+        this._canvas.addEventListener("wheel", this.onWheel.bind(this), { passive: true });
         this.resize();
     }
 
     // init the game
     init() {
+
         // delete the login menu
         var loginMenu = document.getElementById("login-container");
         loginMenu.parentNode.removeChild(loginMenu);
@@ -215,14 +231,88 @@ class Game {
         // hide the overflow
         document.body.style.overflow = "hidden";
 
+        // create the canvas
         this.initCanvas();
+
+        // Create the main buttons //
+
+        // Create the quit button
         this._quitBtn = new UiButton({
-            x: this._playerListMenuRect.x,
-            y: this._playerListMenuRect.y + this._playerListMenuRect.height - (this.isSmallScreen() ? 30 : 60),
-            width: this._playerListMenuRect.width,
+            x: 0,
+            y: 0,
+            width: (this._ctx.canvas.width * this.btnWidthPercentage) / 100,
             height: (this.isSmallScreen() ? 25 : 50)
-        }, "#dc3545", "white", "Quit", () => { window.location.reload(); });
+        }, "#dc3545", "white", "Quit",
+            (thisButton) => {
+                var positionRect = thisButton._positionRect;
+                positionRect.width = (this._ctx.canvas.width * this.btnWidthPercentage) / 100;
+                positionRect.height = (this.isSmallScreen() ? 25 : 50);
+            }
+            , () => { window.location.reload(); });
+        // Create the rotate button
+        this._rotateBtn = new UiButton({
+            x: 0,
+            y: 0,
+            width: (this._ctx.canvas.width * this.btnWidthPercentage) / 100,
+            height: (this.isSmallScreen() ? 25 : 50)
+        }, "#007bff", "white", "Rotate",
+            (thisButton) => {
+                var positionRect = thisButton._positionRect;
+                positionRect.width = (this._ctx.canvas.width * this.btnWidthPercentage) / 100;
+                positionRect.x = positionRect.width + this.btnMargin;
+                positionRect.height = (this.isSmallScreen() ? 25 : 50);
+            },
+            () => { this.rotatePiece(1); });
+        // Create the flip button
+        this._flipBtn = new UiButton({
+            x: 0,
+            y: 0,
+            width: (this._ctx.canvas.width * this.btnWidthPercentage) / 100,
+            height: (this.isSmallScreen() ? 25 : 50)
+        }, "#007bff", "white", "Flip",
+            (thisButton) => {
+                var positionRect = thisButton._positionRect;
+                positionRect.width = (this._ctx.canvas.width * this.btnWidthPercentage) / 100;
+                positionRect.x = positionRect.width * 2 + this.btnMargin * 2;
+                positionRect.height = (this.isSmallScreen() ? 25 : 50);
+            },
+            () => { this.flipPiece() });
+        this._startBtn = new UiButton({
+            x: 0,
+            y: 0,
+            width: 0,
+            height: (this.isSmallScreen() ? 25 : 50)
+        }, "#28a745", "white", "Start game",
+            (thisButton) => {
+                var positionRect = thisButton._positionRect;
+                positionRect.width = (this._ctx.canvas.width * this.btnWidthPercentage) / 100;
+                positionRect.x = positionRect.width * 3 + this.btnMargin * 3;
+                positionRect.height = (this.isSmallScreen() ? 25 : 50);
+            },
+            this.startGame.bind(this));
+
+        // if the player is not an admin, hide the start button
+        if (this._player && !this._player.admin)
+            this._startBtn.changeVisibility();
     }
+
+    rotatePiece(orientation) {
+        if (!this._pieceList._selectedPiece)
+            return;
+        this._socket.emit("rotate-piece", {
+            pieceId: this._pieceList._selectedPiece._id,
+            orientation: orientation
+        });
+    }
+
+    flipPiece() {
+        if (!this._pieceList._selectedPiece)
+            return;
+        this._socket.emit("flip-piece", {
+            pieceId: this._pieceList._selectedPiece._id
+        });
+    }
+
 
     login(username) {
         // authenticate
@@ -241,6 +331,15 @@ class Game {
         this._socket.emit("create-room", { roomName: roomName });
     }
 
+    onFlipResponse(data) {
+        if (data.error) {
+            Notifications.error(data.error);
+            return;
+        }
+        // get the rotated piece
+        this._pieceList._selectedPiece = data.piece;
+    }
+
     onRotateResponse(data) {
         if (data.error) {
             Notifications.error(data.error);
@@ -252,15 +351,6 @@ class Game {
 
     onPlayerInfo(info) {
         this._player = info;
-        // add a start game btn if admin
-        if (this._player.admin) {
-            this._startBtn = new UiButton({
-                x: this._playerListMenuRect.x,
-                y: this._playerListMenuRect.y + this._playerListMenuRect.height - 60,
-                width: this._playerListMenuRect.width,
-                height: 25
-            }, "#007bff", "white", "Start game", this.startGame.bind(this));
-        }
     }
 
     onStartGameResponse(data) {
@@ -393,10 +483,18 @@ class Game {
         this._pieceList.render();
         this.renderSelectedPiece();
 
+        this.renderButtons();
+    }
+
+    renderButtons() {
         if (this._startBtn)
             this._startBtn.render();
         if (this._quitBtn)
             this._quitBtn.render();
+        if (this._rotateBtn)
+            this._rotateBtn.render();
+        if (this._flipBtn)
+            this._flipBtn.render();
     }
 
     renderSelectedPiece() {
@@ -423,28 +521,27 @@ class Game {
         g_game._canvas.style.cursor = "auto";
     }
 
+    setButtonHover(button, mousePos) {
+        if (!button)
+            return;
+        var hovered = this.isPointInRect(mousePos, button._positionRect);
+        // if the button is no more hovered
+        if (button._hovered && !hovered)
+            button.onHoverOut(mousePos);
+        // if the button is hovered
+        else if (hovered)
+            button.onHover(mousePos);
+    }
+
     saveMousePos(event) {
-        const click = this.getClickPosRelativeToCanvas(event);
-        this._mousePos.x = click.x;
-        this._mousePos.y = click.y;
-        if (this._quitBtn) {
-            var hovered = this.isPointInRect(click, this._quitBtn._positionRect);
-            // if the button is no more hovered
-            if (this._quitBtn._hovered && !hovered)
-                this._quitBtn.onHoverOut(click);
-            // if the button is hovered
-            else if (hovered)
-                this._quitBtn.onHover(click);
-        }
-        if (this._startBtn) {
-            var hovered = this.isPointInRect(click, this._startBtn._positionRect);
-            // if the button is no more hovered
-            if (this._startBtn._hovered && !hovered)
-                this._startBtn.onHoverOut(click);
-            // if the button is hovered
-            else if (hovered)
-                this._startBtn.onHover(click);
-        }
+        const mousePos = this.getClickPosRelativeToCanvas(event);
+        this._mousePos.x = mousePos.x;
+        this._mousePos.y = mousePos.y;
+
+        this.setButtonHover(this._quitBtn, mousePos);
+        this.setButtonHover(this._startBtn, mousePos);
+        this.setButtonHover(this._flipBtn, mousePos);
+        this.setButtonHover(this._rotateBtn, mousePos);
     }
 
     // return true if the point is in the rectangle
@@ -462,23 +559,21 @@ class Game {
     }
 
     onWheel(event) {
-        if (!this._pieceList._selectedPiece)
-            return;
-        const pieceId = this._pieceList._selectedPiece._id;
-        if (event.deltaY > 0) {
-            this._socket.emit("rotate-piece", {
-                pieceId: pieceId, orientation: 1
-            });
-        }
-        else {
-            this._socket.emit("rotate-piece", {
-                pieceId: pieceId, orientation: -1
-            });
-        }
+        this.rotatePiece(event.deltaY > 0 ? 1 : -1);
     }
 
     getClickPosRelativeToCanvas(event) {
-        return ({ x: event.clientX - parseInt(this._canvas.style.marginLeft), y: event.clientY - parseInt(this._canvas.style.marginTop) });
+        return ({ x: event.clientX - parseInt(this._canvas.style.marginLeft), y: event.clientY });
+    }
+
+    checkBtnClick(button, clickPos) {
+        if (!button)
+            return (false);
+        if (this.isPointInRect(clickPos, button._positionRect)) {
+            button.onClick(clickPos);
+            return (true);
+        }
+        return (false);
     }
 
     onClick(event) {
@@ -491,10 +586,14 @@ class Game {
             click.y = 0;
 
         // if the click is on a button
-        if (this._quitBtn && this.isPointInRect(click, this._quitBtn._positionRect))
-            return this._quitBtn.onClick(click);
-        if (this._startBtn && this.isPointInRect(click, this._startBtn._positionRect))
-            return this._startBtn.onClick(click);
+        if (this.checkBtnClick(this._quitBtn, click))
+            return;
+        if (this.checkBtnClick(this._startBtn, click))
+            return;
+        if (this.checkBtnClick(this._flipBtn, click))
+            return;
+        if (this.checkBtnClick(this._rotateBtn, click))
+            return;
 
         if (this.isClickOnBoard(click) && this._pieceList._selectedPiece) {
             var piece = this._pieceList._selectedPiece;
